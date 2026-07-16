@@ -33,7 +33,6 @@ interface OrderWithCustomer extends Order {
 
 const emptyInvoice = {
   customer_id: "",
-  doc_type: "tax_invoice" as const,
   invoice_date: new Date().toISOString().split("T")[0],
   due_date: "",
   subtotal: 0,
@@ -47,7 +46,6 @@ export default function Invoices() {
   const [form, setForm] = useState(emptyInvoice);
   const [selectedOrder, setSelectedOrder] = useState<string>("");
   const [docType, setDocType] = useState<"proforma" | "tax_invoice">("tax_invoice");
-  const [showPDF, setShowPDF] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   // Fetch invoices
@@ -96,7 +94,7 @@ export default function Invoices() {
         const order = orders.find((o) => o.id === selectedOrder);
         if (order?.order_items) {
           const subtotal = order.order_items.reduce((sum: number, item: any) => sum + item.amount, 0);
-          const isInterstate = form.gst_rate === 18; // Simplified
+          const isInterstate = form.gst_rate === 18;
           const gstAmount = (subtotal * form.gst_rate) / 100;
           const cgstAmount = isInterstate ? 0 : gstAmount / 2;
           const sgstAmount = isInterstate ? 0 : gstAmount / 2;
@@ -202,7 +200,6 @@ export default function Invoices() {
     setEditing(inv);
     setForm({
       customer_id: inv.customer_id,
-      doc_type: inv.doc_type,
       invoice_date: inv.invoice_date,
       due_date: inv.due_date || "",
       subtotal: inv.subtotal,
@@ -218,6 +215,7 @@ export default function Invoices() {
     setEditing(null);
     setForm(emptyInvoice);
     setDocType("tax_invoice");
+    setSelectedOrder("");
   };
 
   const filtered = invoices.filter((inv) =>
