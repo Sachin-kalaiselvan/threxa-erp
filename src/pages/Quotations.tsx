@@ -87,12 +87,14 @@ export default function Quotations() {
       { kind: "flute", gsm: 125, bf: 5.5 },
       { kind: "medium", gsm: 100, bf: 6 },
     ];
+    
     const total_gsm = layers.reduce((sum: number, l: any) => sum + l.gsm, 0);
-    const avg_bf = layers.reduce((sum, l) => sum + l.bf, 0) / layers.length;
+    const avg_bf = layers.reduce((sum: number, l: any) => sum + l.bf, 0) / layers.length;
 
-    // Weight
+    // Weight calculation
     const sheet_area_m2 = (sheet_length_mm * sheet_width_mm) / 1000000;
-    const total_gsm = layers.reduce((sum: number, l: any) => sum + l.gsm, 0);
+    const flute_layer = layers.find((l) => l.kind === "flute");
+    const gsm_with_takeup = total_gsm + (flute_takeup - 1) * (flute_layer?.gsm || 0);
     const weight_per_box_kg = (gsm_with_takeup * sheet_area_m2) / 1000;
     const total_weight_kg = weight_per_box_kg * (quantity || 1);
     const cost_per_box = weight_per_box_kg * paper_rate_per_kg;
@@ -125,7 +127,17 @@ export default function Quotations() {
         const { error } = await supabase
           .from("quotations")
           .update({
-            ...form,
+            customer_id: form.customer_id,
+            box_name: form.box_name,
+            ply: form.ply,
+            length_mm: form.length_mm,
+            width_mm: form.width_mm,
+            height_mm: form.height_mm,
+            paper_rate_per_kg: form.paper_rate_per_kg,
+            conversion_pct: form.conversion_pct,
+            margin_pct: form.margin_pct,
+            quantity: form.quantity,
+            flute_takeup: form.flute_takeup,
             quote_no: editing.quote_no,
             layers: [],
             sheet_length_mm: calculated.sheet_length_mm,
@@ -140,7 +152,17 @@ export default function Quotations() {
       } else {
         const { error } = await supabase.from("quotations").insert({
           quote_no: quoteNo,
-          ...form,
+          customer_id: form.customer_id,
+          box_name: form.box_name,
+          ply: form.ply,
+          length_mm: form.length_mm,
+          width_mm: form.width_mm,
+          height_mm: form.height_mm,
+          paper_rate_per_kg: form.paper_rate_per_kg,
+          conversion_pct: form.conversion_pct,
+          margin_pct: form.margin_pct,
+          quantity: form.quantity,
+          flute_takeup: form.flute_takeup,
           layers: [],
           sheet_length_mm: calculated.sheet_length_mm,
           sheet_width_mm: calculated.sheet_width_mm,
