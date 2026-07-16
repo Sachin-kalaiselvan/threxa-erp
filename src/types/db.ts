@@ -52,3 +52,35 @@ export interface Order {
   notes: string | null;
   created_at: string;
 }
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  box_spec_id: string;
+  quantity: number;
+  rate: number;
+  amount: number;
+}
+
+export interface JobCard {
+  id: string;
+  job_no: string;
+  order_item_id: string;
+  planned_start: string | null;
+  planned_end: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface ProductionStage {
+  id: string;
+  job_card_id: string;
+  stage: "corrugation" | "printing" | "die_cutting" | "pasting" | "finishing" | "quality_check";
+  status: "not_started" | "in_progress" | "completed" | "on_hold";
+  operator: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  qty_ok: number | null;
+  qty_rejected: number | null;
+  remarks: string | null;
+}
