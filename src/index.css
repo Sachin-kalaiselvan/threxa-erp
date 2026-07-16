@@ -1,10 +1,15 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer components {
   .input {
-    @apply bg-[#1a1b24] border border-white/[.08] rounded px-3 py-2 text-[13px] text-white placeholder-[#B9BAC5] focus:outline-none focus:border-blue-500/50 transition-colors;
+    @apply bg-[#1a1b24] border rounded px-3 py-2 text-[13px] text-white placeholder-[#B9BAC5] focus:outline-none transition-colors disabled:opacity-50;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .input:focus {
+    border-color: rgba(59, 130, 246, 0.5);
   }
 
   .btn {
@@ -12,10 +17,26 @@
   }
 
   .card {
-    @apply bg-[#0b0c14] border border-white/[.06] rounded-lg;
+    @apply bg-[#0b0c14] rounded-lg;
+    border: 1px solid rgba(255, 255, 255, 0.06);
   }
 }
 
 * {
-  @apply scrollbar-thin scrollbar-thumb-white/[.1] scrollbar-track-transparent;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
