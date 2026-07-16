@@ -26,6 +26,11 @@ interface Invoice {
   orders?: { order_no: string; order_items?: any[] };
 }
 
+interface OrderWithCustomer extends Order {
+  customers?: { name: string };
+  order_items?: any[];
+}
+
 const emptyInvoice = {
   customer_id: "",
   doc_type: "tax_invoice" as const,
@@ -77,7 +82,7 @@ export default function Invoices() {
         .eq("status", "ready")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []) as (Order & { order_items?: any[] })[];
+      return (data || []) as OrderWithCustomer[];
     },
   });
 
@@ -86,14 +91,11 @@ export default function Invoices() {
     mutationFn: async () => {
       if (!form.customer_id) throw new Error("Select customer");
 
-      let orderId: string | null = null;
       if (selectedOrder) {
-        orderId = selectedOrder;
-        // Auto-calculate from order items
         const order = orders.find((o) => o.id === selectedOrder);
         if (order?.order_items) {
           const subtotal = order.order_items.reduce((sum: number, item: any) => sum + item.amount, 0);
-          const isInterstate = form.gst_rate === 18 && true; // Simplified
+          const isInterstate = form.gst_rate === 18; // Simplified
           const gstAmount = (subtotal * form.gst_rate) / 100;
           const cgstAmount = isInterstate ? 0 : gstAmount / 2;
           const sgstAmount = isInterstate ? 0 : gstAmount / 2;
@@ -121,7 +123,7 @@ export default function Invoices() {
             const { error } = await supabase.from("invoices").insert({
               invoice_no: invoiceNo,
               doc_type: form.doc_type,
-              order_id: orderId,
+              order_id: selectedOrder,
               customer_id: form.customer_id,
               invoice_date: form.invoice_date,
               due_date: form.due_date || null,
@@ -317,7 +319,7 @@ export default function Invoices() {
                 <select
                   className="input"
                   value={form.doc_type}
-                  onChange={(e) => setForm({ ...form, doc_type: e.target.value as any })}
+                  onChange={(e) => setForm({ ...form, doc_type: e.target.value as "tax_invoice" | "proforma" })}
                 >
                   <option value="tax_invoice">Tax Invoice</option>
                   <option value="proforma">Proforma</option>

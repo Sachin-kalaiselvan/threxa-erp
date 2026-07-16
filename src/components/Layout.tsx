@@ -1,129 +1,105 @@
-import { useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
-import {
-  LayoutDashboard, Users, Package, Calculator, ClipboardList,
-  Factory, Boxes, Wallet, ReceiptText, UserRound, CalendarCheck,
-  BadgeIndianRupee, Truck, LogOut,
-} from "lucide-react";
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { ChevronDown, BarChart3, Package, Zap, FileText, Truck, Users, LogOut, Menu, X, ReceiptText, User } from "lucide-react";
 import { supabase } from "../lib/supabase";
-import threxaIcon from "../assets/threxa-icon.png";
-import threxaWordmark from "../assets/threxa-wordmark.png";
 
-type Role = "owner" | "admin" | "production" | "dispatch" | "accounts" | "staff";
+interface NavItem {
+  label: string;
+  path: string;
+  icon: React.ReactNode;
+}
 
-/* Navigation grouped by module. `roles` = who sees it.
-   Note: this is UI-level hiding for a clean experience per role —
-   real enforcement is added via RLS policies in the hardening phase. */
-const sections: {
-  title: string;
-  items: { to: string; label: string; icon: any; roles: Role[] }[];
-}[] = [
-  {
-    title: "Overview",
-    items: [{ to: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["owner","admin","production","dispatch","accounts","staff"] }],
-  },
-  {
-    title: "Sales & Documents",
-    items: [
-      { to: "/customers", label: "Customers", icon: Users, roles: ["owner","admin","accounts","staff"] },
-      { to: "/products", label: "Box Specs", icon: Package, roles: ["owner","admin","production","staff"] },
-      { to: "/quotations", label: "Quotation Calculator", icon: Calculator, roles: ["owner","admin","accounts"] },
-      { to: "/invoices", label: "Invoices", icon: ReceiptText, roles: ["owner","admin","accounts"] },
-    ],
-  },
-  {
-    title: "Operations",
-    items: [
-      { to: "/orders", label: "Orders", icon: ClipboardList, roles: ["owner","admin","production","dispatch","staff"] },
-      { to: "/production", label: "Production", icon: Factory, roles: ["owner","admin","production"] },
-      { to: "/inventory", label: "Reel Stock", icon: Boxes, roles: ["owner","admin","production"] },
-      { to: "/dispatch", label: "Dispatch", icon: Truck, roles: ["owner","admin","dispatch"] },
-    ],
-  },
-  {
-    title: "Finance & People",
-    items: [
-      { to: "/cashbook", label: "Cash Book", icon: Wallet, roles: ["owner","admin","accounts"] },
-      { to: "/employees", label: "Employees", icon: UserRound, roles: ["owner","admin"] },
-      { to: "/attendance", label: "Attendance", icon: CalendarCheck, roles: ["owner","admin","production"] },
-      { to: "/payroll", label: "Payroll", icon: BadgeIndianRupee, roles: ["owner","admin"] },
-    ],
-  },
+const navItems: NavItem[] = [
+  { label: "Dashboard", path: "/", icon: <BarChart3 size={18} /> },
+  { label: "Customers", path: "/customers", icon: <Users size={18} /> },
+  { label: "Orders", path: "/orders", icon: <Package size={18} /> },
+  { label: "Production", path: "/production", icon: <Zap size={18} /> },
+  { label: "Quotations", path: "/quotations", icon: <FileText size={18} /> },
+  { label: "Invoices", path: "/invoices", icon: <ReceiptText size={18} /> },
+  { label: "Dispatch", path: "/dispatch", icon: <Truck size={18} /> },
 ];
 
-export default function Layout() {
-  const [role, setRole] = useState<Role>("owner");
-  const [name, setName] = useState("");
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const location = useLocation();
 
-  useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const { data: profile } = await supabase
-        .from("profiles").select("role, full_name").eq("id", data.user.id).single();
-      if (profile) {
-        setRole(profile.role as Role);
-        setName(profile.full_name);
-      }
-    });
-  }, []);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  };
 
   return (
-    <div className="flex h-screen">
-      <aside className="flex w-[220px] shrink-0 flex-col border-r border-white/[.06] bg-white/[.015]">
-        <div className="flex h-[60px] items-center gap-2 px-5">
-          {/* this lockup sits exactly where the intro logo lands */}
-          <img src={threxaIcon} alt="" className="w-[27px]" />
-          <img src={threxaWordmark} alt="THREXA" className="w-[86px]" />
+    <div className="flex h-screen bg-[#0a0b13]">
+      {/* Sidebar */}
+      <div
+        className={`${
+          sidebarOpen ? "w-64" : "w-20"
+        } border-r border-white/[.06] bg-[#0b0c14] transition-all duration-300 flex flex-col`}
+      >
+        {/* Logo */}
+        <div className="h-16 border-b border-white/[.06] flex items-center justify-center">
+          <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            {sidebarOpen ? "Threxa" : "T"}
+          </div>
         </div>
-        <nav className="flex-1 overflow-y-auto py-2">
-          {sections.map((section) => {
-            const visible = section.items.filter((i) => i.roles.includes(role));
-            if (visible.length === 0) return null;
+
+        {/* Nav Items */}
+        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
             return (
-              <div key={section.title} className="mb-3">
-                <div className="px-5 pb-1.5 pt-2 text-[10px] font-medium uppercase tracking-wider text-[#6b6c7a]">
-                  {section.title}
-                </div>
-                {visible.map(({ to, label, icon: Icon }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    end={to === "/"}
-                    className={({ isActive }) =>
-                      `mx-2.5 mb-0.5 flex items-center gap-2.5 rounded-lg px-3.5 py-2 text-[13px] ` +
-                      (isActive
-                        ? "bg-[rgba(157,108,255,.1)] text-white"
-                        : "text-[#B9BAC5] hover:text-white")
-                    }
-                  >
-                    <Icon size={15} />
-                    {label}
-                  </NavLink>
-                ))}
-              </div>
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors ${
+                  isActive
+                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                    : "text-[#B9BAC5] hover:bg-white/[.05]"
+                }`}
+              >
+                {item.icon}
+                {sidebarOpen && <span>{item.label}</span>}
+              </Link>
             );
           })}
         </nav>
-        <div className="border-t border-white/[.06] p-3">
-          {name && (
-            <div className="mb-1 px-2 text-[11px] text-[#B9BAC5]">
-              {name} · <span className="capitalize">{role}</span>
-            </div>
-          )}
+
+        {/* Toggle & Logout */}
+        <div className="border-t border-white/[.06] p-4 space-y-2">
           <button
-            onClick={() => supabase.auth.signOut()}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13px] text-[#B9BAC5] hover:text-white"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="w-full flex items-center justify-center px-4 py-2 text-[#B9BAC5] hover:bg-white/[.05] rounded-lg transition-colors"
           >
-            <LogOut size={15} />
-            Sign out
+            {sidebarOpen ? <ChevronDown size={18} /> : <Menu size={18} />}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-[#B9BAC5] hover:text-red-400 text-sm rounded-lg hover:bg-red-500/10 transition-colors"
+          >
+            <LogOut size={18} />
+            {sidebarOpen && <span>Logout</span>}
           </button>
         </div>
-      </aside>
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-7">
-          <Outlet />
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Bar */}
+        <div className="h-16 border-b border-white/[.06] bg-[#0b0c14] px-8 flex items-center justify-between">
+          <h2 className="text-sm text-[#B9BAC5]">Threxa ERP — Carton Box Manufacturer</h2>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="lg:hidden text-[#B9BAC5] hover:text-white"
+          >
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
-      </main>
+
+        {/* Page Content */}
+        <div className="flex-1 overflow-auto">
+          <div className="p-8">{children}</div>
+        </div>
+      </div>
     </div>
   );
 }
