@@ -4,7 +4,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import Layout from "./components/Layout";
-import ThrexaIntro from "./components/ThrexaIntro";
 
 // Pages — these match the actual files in src/pages/
 import Login from "./pages/Login";
@@ -45,7 +44,6 @@ function NotConfigured() {
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [freshLogin, setFreshLogin] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -73,8 +71,6 @@ export default function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (mounted) {
-        if (event === "SIGNED_IN") setFreshLogin(true);
-        if (event === "SIGNED_OUT") setFreshLogin(false);
         setSession(session);
         queryClient.invalidateQueries();
       }
@@ -103,25 +99,23 @@ export default function App() {
   }
 
   return (
-    <ThrexaIntro logoTarget={{ top: 14, left: 84 }} forcePlay={freshLogin}>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/customers" element={<Customers />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/production" element={<Production />} />
-          <Route path="/quotations" element={<Quotations />} />
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/dispatch" element={<Dispatch />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/inventory" element={<Inventory />} />
-          <Route path="/employees" element={<Employees />} />
-          <Route path="/attendance" element={<Attendance />} />
-          <Route path="/payroll" element={<Payroll />} />
-          <Route path="/cashbook" element={<CashBook />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Layout>
-    </ThrexaIntro>
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/customers" element={<Customers />} />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/production" element={<Production />} />
+        <Route path="/quotations" element={<Quotations />} />
+        <Route path="/invoices" element={<Invoices />} />
+        <Route path="/dispatch" element={<Dispatch />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/inventory" element={<Inventory />} />
+        <Route path="/employees" element={<Employees />} />
+        <Route path="/attendance" element={<Attendance />} />
+        <Route path="/payroll" element={<Payroll />} />
+        <Route path="/cashbook" element={<CashBook />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Layout>
   );
 }
