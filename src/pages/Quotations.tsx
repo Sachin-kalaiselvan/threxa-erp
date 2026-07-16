@@ -1,257 +1,468 @@
-import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Save } from "lucide-react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Trash2, X, ArrowRight } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import type { Customer, BoxSpec } from "../types/db";
 
-/* Quotation Calculator — GSM x BF bursting-strength logic for 3/5/7-ply.
-   Industry approximations used (all editable inputs, results are estimates):
-   - Sheet length = 2 x (L + W) + glue flap
-   - Sheet width (deckle) = W + H
-   - Fluted layers consume extra paper: take-up factor (default 1.45)
-   - Weight/box (kg) = sheet area (m2) x total GSM / 1000
-   - Bursting strength (kg/cm2) ~= SUM(BF x GSM of every layer) / 1000
-   - Cost = paper cost + conversion %, quote = cost + margin % */
+interface Quotation {
+  id: string;
+  quote_no: string;
+  customer_id: string;
+  box_name: string;
+  ply: number;
+  length_mm: number;
+  width_mm: number;
+  height_mm: number;
+  layers: any[];
+  flute_takeup: number;
+  paper_rate_per_kg: number;
+  conversion_pct: number;
+  margin_pct: number;
+  sheet_length_mm: number | null;
+  sheet_width_mm: number | null;
+  weight_kg: number | null;
+  bursting_strength: number | null;
+  cost_per_box: number | null;
+  quoted_rate: number | null;
+  quantity: number | null;
+  notes: string | null;
+  created_at: string;
+  customers?: { name: string };
+}
 
-type Layer = { kind: "liner" | "flute"; gsm: number; bf: number };
-
-const plyLayers = (ply: number): Layer[] => {
-  const L: Layer = { kind: "liner", gsm: 150, bf: 18 };
-  const F: Layer = { kind: "flute", gsm: 120, bf: 16 };
-  if (ply === 3) return [ {...L}, {...F}, {...L} ];
-  if (ply === 5) return [ {...L}, {...F}, {...L}, {...F}, {...L} ];
-  return [ {...L}, {...F}, {...L}, {...F}, {...L}, {...F}, {...L} ];
+const emptyQuote = {
+  customer_id: "",
+  box_name: "",
+  ply: 3,
+  length_mm: 0,
+  width_mm: 0,
+  height_mm: 0,
+  paper_rate_per_kg: 80,
+  conversion_pct: 20,
+  margin_pct: 15,
+  quantity: 1000,
+  flute_takeup: 1.45,
 };
 
 export default function Quotations() {
   const qc = useQueryClient();
-  const [ply, setPly] = useState(3);
-  const [layers, setLayers] = useState<Layer[]>(plyLayers(3));
-  const [dims, setDims] = useState({ length_mm: 450, width_mm: 300, height_mm: 300 });
-  const [glueFlap, setGlueFlap] = useState(40);
-  const [takeup, setTakeup] = useState(1.45);
-  const [paperRate, setPaperRate] = useState(42);      // INR per kg
-  const [conversionPct, setConversionPct] = useState(20);
-  const [marginPct, setMarginPct] = useState(15);
-  const [boxName, setBoxName] = useState("");
-  const [customerId, setCustomerId] = useState("");
-  const [quantity, setQuantity] = useState(1000);
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Quotation | null>(null);
+  const [form, setForm] = useState(emptyQuote);
+  const [calculated, setCalculated] = useState<any>(null);
+  const [search, setSearch] = useState("");
 
-  const changePly = (p: number) => { setPly(p); setLayers(plyLayers(p)); };
-  const setLayer = (i: number, field: "gsm" | "bf", v: number) => {
-    setLayers(layers.map((l, idx) => (idx === i ? { ...l, [field]: v } : l)));
-  };
-
-  const { data: customers = [] } = useQuery({
-    queryKey: ["customers-list"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("customers").select("id,name").order("name");
-      if (error) throw error;
-      return data as { id: string; name: string }[];
-    },
-  });
-
-  const calc = useMemo(() => {
-    const sheetL = 2 * (dims.length_mm + dims.width_mm) + glueFlap;
-    const sheetW = dims.width_mm + dims.height_mm;
-    const areaM2 = (sheetL * sheetW) / 1_000_000;
-    const totalGsm = layers.reduce(
-      (sum, l) => sum + l.gsm * (l.kind === "flute" ? takeup : 1), 0
-    );
-    const weightKg = (areaM2 * totalGsm) / 1000;
-    const bs = layers.reduce((sum, l) => sum + l.bf * l.gsm, 0) / 1000;
-    const paperCost = weightKg * paperRate;
-    const conversion = paperCost * (conversionPct / 100);
-    const cost = paperCost + conversion;
-    const rate = cost * (1 + marginPct / 100);
-    return {
-      sheetL, sheetW, areaM2, totalGsm,
-      weightKg, bs, bsPsi: bs * 14.22,
-      paperCost, conversion, cost, rate,
-      orderValue: rate * quantity,
-    };
-  }, [dims, glueFlap, layers, takeup, paperRate, conversionPct, marginPct, quantity]);
-
-  const save = useMutation({
-    mutationFn: async () => {
-      const { data: qno, error: e1 } = await supabase.rpc("next_doc_number", { seq_key: "quotation" });
-      if (e1) throw e1;
-      const { error } = await supabase.from("quotations").insert({
-        quote_no: qno,
-        customer_id: customerId || null,
-        box_name: boxName || `${ply}-Ply ${dims.length_mm}x${dims.width_mm}x${dims.height_mm}`,
-        ply, ...dims,
-        layers, flute_takeup: takeup,
-        paper_rate_per_kg: paperRate,
-        conversion_pct: conversionPct, margin_pct: marginPct,
-        sheet_length_mm: calc.sheetL, sheet_width_mm: calc.sheetW,
-        weight_kg: calc.weightKg, bursting_strength: calc.bs,
-        cost_per_box: calc.cost, quoted_rate: calc.rate, quantity,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["quotations"] }),
-  });
-
-  const { data: saved = [] } = useQuery({
+  const { data: quotations = [], isLoading } = useQuery({
     queryKey: ["quotations"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("quotations")
-        .select("id, quote_no, box_name, ply, quoted_rate, quantity, created_at")
-        .order("created_at", { ascending: false })
-        .limit(10);
+        .select("*, customers(name)")
+        .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as any[];
+      return (data || []) as Quotation[];
     },
   });
 
-  const num = (v: number, d = 2) => v.toLocaleString("en-IN", { maximumFractionDigits: d });
+  const { data: customers = [] } = useQuery({
+    queryKey: ["customers"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("customers").select("*").eq("is_active", true);
+      if (error) throw error;
+      return data as Customer[];
+    },
+  });
+
+  // GSM x BF Calculator
+  const calculateQuote = (formData: typeof form) => {
+    const { length_mm, width_mm, height_mm, ply, paper_rate_per_kg, conversion_pct, margin_pct, quantity, flute_takeup } = formData;
+
+    // Sheet dimensions
+    const sheet_length_mm = (length_mm + width_mm) * 2 + 20; // perimeter + flap
+    const sheet_width_mm = height_mm + 20; // height + overlap
+
+    // GSM layers (simplified: liner 150, flute 125, medium 100)
+    const layers = [
+      { kind: "liner", gsm: 150, bf: 8 },
+      { kind: "flute", gsm: 125, bf: 5.5 },
+      { kind: "medium", gsm: 100, bf: 6 },
+    ];
+    const total_gsm = layers.reduce((sum, l) => sum + l.gsm, 0);
+    const avg_bf = layers.reduce((sum, l) => sum + l.bf, 0) / layers.length;
+
+    // Weight
+    const sheet_area_m2 = (sheet_length_mm * sheet_width_mm) / 1000000;
+    const gsm_with_takeup = total_gsm + (flute_takeup - 1) * layers.find((l) => l.kind === "flute")?.gsm || 0;
+    const weight_per_box_kg = (gsm_with_takeup * sheet_area_m2) / 1000;
+    const total_weight_kg = weight_per_box_kg * (quantity || 1);
+    const cost_per_box = weight_per_box_kg * paper_rate_per_kg;
+
+    // Margin
+    const conversion_cost = (cost_per_box * conversion_pct) / 100;
+    const total_cost = cost_per_box + conversion_cost;
+    const margin_amount = (total_cost * margin_pct) / 100;
+    const quoted_rate = total_cost + margin_amount;
+
+    const bursting_strength = avg_bf; // Simplified
+
+    setCalculated({
+      sheet_length_mm: Math.round(sheet_length_mm),
+      sheet_width_mm: Math.round(sheet_width_mm),
+      weight_kg: weight_per_box_kg,
+      bursting_strength,
+      cost_per_box,
+      quoted_rate,
+      total_weight_kg,
+    });
+  };
+
+  const saveQuote = useMutation({
+    mutationFn: async () => {
+      if (!form.customer_id || !form.box_name || !calculated) throw new Error("Fill all fields & calculate");
+
+      const quoteNo = await generateQuoteNumber();
+      if (editing) {
+        const { error } = await supabase
+          .from("quotations")
+          .update({
+            ...form,
+            quote_no: editing.quote_no,
+            layers: [],
+            sheet_length_mm: calculated.sheet_length_mm,
+            sheet_width_mm: calculated.sheet_width_mm,
+            weight_kg: calculated.weight_kg,
+            bursting_strength: calculated.bursting_strength,
+            cost_per_box: calculated.cost_per_box,
+            quoted_rate: calculated.quoted_rate,
+          })
+          .eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("quotations").insert({
+          quote_no: quoteNo,
+          ...form,
+          layers: [],
+          sheet_length_mm: calculated.sheet_length_mm,
+          sheet_width_mm: calculated.sheet_width_mm,
+          weight_kg: calculated.weight_kg,
+          bursting_strength: calculated.bursting_strength,
+          cost_per_box: calculated.cost_per_box,
+          quoted_rate: calculated.quoted_rate,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["quotations"] });
+      closeForm();
+    },
+  });
+
+  const generateQuoteNumber = async (): Promise<string> => {
+    const { data, error } = await supabase.rpc("next_doc_number", { seq_key: "quotation" });
+    if (error) throw error;
+    return data;
+  };
+
+  const convertToOrder = async (quote: Quotation) => {
+    if (!quote.customers) return;
+    try {
+      // Create order
+      const orderNo = await (async () => {
+        const { data, error } = await supabase.rpc("next_doc_number", { seq_key: "order" });
+        if (error) throw error;
+        return data;
+      })();
+
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          order_no: orderNo,
+          customer_id: quote.customer_id,
+          order_date: new Date().toISOString().split("T")[0],
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create dummy box spec & order item (simplified)
+      alert(`Order ${orderNo} created! Manually add items in Orders page.`);
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    } catch (err) {
+      alert("Error: " + (err as Error).message);
+    }
+  };
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyQuote);
+    setCalculated(null);
+    setShowForm(true);
+  };
+
+  const openEdit = (q: Quotation) => {
+    setEditing(q);
+    setForm({
+      customer_id: q.customer_id,
+      box_name: q.box_name,
+      ply: q.ply,
+      length_mm: q.length_mm,
+      width_mm: q.width_mm,
+      height_mm: q.height_mm,
+      paper_rate_per_kg: q.paper_rate_per_kg,
+      conversion_pct: q.conversion_pct,
+      margin_pct: q.margin_pct,
+      quantity: q.quantity || 1000,
+      flute_takeup: q.flute_takeup,
+    });
+    setCalculated({
+      sheet_length_mm: q.sheet_length_mm,
+      sheet_width_mm: q.sheet_width_mm,
+      weight_kg: q.weight_kg,
+      bursting_strength: q.bursting_strength,
+      cost_per_box: q.cost_per_box,
+      quoted_rate: q.quoted_rate,
+    });
+    setShowForm(true);
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditing(null);
+    setForm(emptyQuote);
+    setCalculated(null);
+  };
+
+  const filtered = quotations.filter((q) =>
+    q.quote_no.toLowerCase().includes(search.toLowerCase()) ||
+    (q.customers?.name || "").toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div>
-      <h1 className="mb-5 text-lg font-semibold">Quotation Calculator</h1>
-      <div className="grid grid-cols-[1fr_360px] gap-4">
-        {/* inputs */}
-        <div className="card p-5">
-          <div className="mb-4 flex gap-2">
-            {[3, 5, 7].map((p) => (
-              <button
-                key={p}
-                className={p === ply ? "btn" : "btn-ghost"}
-                onClick={() => changePly(p)}
-              >
-                {p}-Ply
-              </button>
-            ))}
-          </div>
-
-          <div className="mb-4 grid grid-cols-4 gap-3">
-            {(["length_mm", "width_mm", "height_mm"] as const).map((k) => (
-              <div key={k}>
-                <label className="mb-1 block text-[11px] text-[#B9BAC5]">
-                  {k.replace("_mm", "").toUpperCase()} (mm)
-                </label>
-                <input type="number" className="input"
-                  value={dims[k]}
-                  onChange={(e) => setDims({ ...dims, [k]: +e.target.value })} />
-              </div>
-            ))}
-            <div>
-              <label className="mb-1 block text-[11px] text-[#B9BAC5]">Glue flap (mm)</label>
-              <input type="number" className="input" value={glueFlap}
-                onChange={(e) => setGlueFlap(+e.target.value)} />
-            </div>
-          </div>
-
-          <div className="mb-1 text-[11px] uppercase tracking-wide text-[#B9BAC5]">Board construction</div>
-          <div className="mb-4 space-y-2">
-            {layers.map((l, i) => (
-              <div key={i} className="grid grid-cols-[80px_1fr_1fr] items-center gap-3">
-                <span className={`text-[12px] ${l.kind === "flute" ? "text-[#9D6CFF]" : "text-[#B9BAC5]"}`}>
-                  {l.kind === "flute" ? "Flute" : "Liner"} {i + 1}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-[#B9BAC5]">GSM</span>
-                  <input type="number" className="input" value={l.gsm}
-                    onChange={(e) => setLayer(i, "gsm", +e.target.value)} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-[#B9BAC5]">BF</span>
-                  <input type="number" className="input" value={l.bf}
-                    onChange={(e) => setLayer(i, "bf", +e.target.value)} />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-4 gap-3">
-            {([
-              ["Flute take-up", takeup, setTakeup, 0.01],
-              ["Paper ₹/kg", paperRate, setPaperRate, 1],
-              ["Conversion %", conversionPct, setConversionPct, 1],
-              ["Margin %", marginPct, setMarginPct, 1],
-            ] as [string, number, (v: number) => void, number][]).map(([label, val, set, step]) => (
-              <div key={label}>
-                <label className="mb-1 block text-[11px] text-[#B9BAC5]">{label}</label>
-                <input type="number" step={step} className="input" value={val}
-                  onChange={(e) => set(+e.target.value)} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* results */}
-        <div className="space-y-4">
-          <div className="card p-5">
-            <div className="mb-3 text-[11px] uppercase tracking-wide text-[#B9BAC5]">Results</div>
-            <div className="space-y-2 text-[13px]">
-              <Row k="Sheet size" v={`${num(calc.sheetL, 0)} x ${num(calc.sheetW, 0)} mm`} />
-              <Row k="Board GSM (with take-up)" v={num(calc.totalGsm, 0)} />
-              <Row k="Weight / box" v={`${num(calc.weightKg, 3)} kg`} />
-              <Row k="Bursting strength" v={`${num(calc.bs, 1)} kg/cm² (${num(calc.bsPsi, 0)} psi)`} highlight />
-              <div className="my-2 border-t border-white/[.06]" />
-              <Row k="Paper cost" v={`₹${num(calc.paperCost)}`} />
-              <Row k={`Conversion (${conversionPct}%)`} v={`₹${num(calc.conversion)}`} />
-              <Row k="Cost / box" v={`₹${num(calc.cost)}`} />
-              <Row k={`Quoted rate (+${marginPct}%)`} v={`₹${num(calc.rate)}`} highlight />
-            </div>
-          </div>
-
-          <div className="card p-5">
-            <div className="mb-3 text-[11px] uppercase tracking-wide text-[#B9BAC5]">Save quotation</div>
-            <div className="space-y-3">
-              <input className="input" placeholder="Box name (optional)"
-                value={boxName} onChange={(e) => setBoxName(e.target.value)} />
-              <select className="input" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-                <option value="">— No customer —</option>
-                {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <div className="flex items-center gap-3">
-                <input type="number" className="input" value={quantity}
-                  onChange={(e) => setQuantity(+e.target.value)} />
-                <span className="whitespace-nowrap text-[12px] text-[#B9BAC5]">
-                  = ₹{num(calc.orderValue, 0)}
-                </span>
-              </div>
-              {save.isError && <p className="text-xs text-red-400">{(save.error as Error).message}</p>}
-              <button className="btn flex w-full items-center justify-center gap-1.5"
-                onClick={() => save.mutate()} disabled={save.isPending}>
-                <Save size={14} /> {save.isPending ? "Saving..." : "Save quotation"}
-              </button>
-            </div>
-          </div>
+      <div className="mb-5 flex items-center justify-between">
+        <h1 className="text-lg font-semibold">Quotations</h1>
+        <div className="flex gap-3">
+          <input
+            className="input w-[220px]"
+            placeholder="Search quote..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button className="btn flex items-center gap-1.5" onClick={openCreate}>
+            <Plus size={14} /> New Quote
+          </button>
         </div>
       </div>
 
-      {saved.length > 0 && (
-        <div className="card mt-4 overflow-hidden">
-          <div className="border-b border-white/[.06] px-4 py-3 text-[11px] uppercase tracking-wide text-[#B9BAC5]">
-            Recent quotations
+      <div className="card overflow-hidden">
+        <table className="w-full text-[13px]">
+          <thead>
+            <tr className="border-b border-white/[.06] text-left text-[11px] uppercase tracking-wide text-[#B9BAC5]">
+              <th className="px-4 py-3">Quote No</th>
+              <th className="px-4 py-3">Customer</th>
+              <th className="px-4 py-3">Box Spec</th>
+              <th className="px-4 py-3">Qty</th>
+              <th className="px-4 py-3">Rate</th>
+              <th className="px-4 py-3 w-[90px]"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading && (
+              <tr>
+                <td className="px-4 py-6 text-[#B9BAC5]" colSpan={6}>
+                  Loading...
+                </td>
+              </tr>
+            )}
+            {!isLoading && filtered.length === 0 && (
+              <tr>
+                <td className="px-4 py-6 text-[#B9BAC5]" colSpan={6}>
+                  No quotations yet.
+                </td>
+              </tr>
+            )}
+            {filtered.map((q) => (
+              <tr key={q.id} className="border-b border-white/[.04] hover:bg-white/[.02]">
+                <td className="px-4 py-3 font-mono font-medium">{q.quote_no}</td>
+                <td className="px-4 py-3 text-[#B9BAC5]">{q.customers?.name || "—"}</td>
+                <td className="px-4 py-3 text-[#B9BAC5]">{q.box_name} ({q.ply}-ply)</td>
+                <td className="px-4 py-3">{q.quantity || "—"}</td>
+                <td className="px-4 py-3 font-medium">₹{q.quoted_rate?.toFixed(2) || "—"}</td>
+                <td className="px-4 py-3">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      className="text-blue-500 hover:text-blue-400"
+                      title="Convert to order"
+                      onClick={() => convertToOrder(q)}
+                    >
+                      <ArrowRight size={14} />
+                    </button>
+                    <button className="text-[#B9BAC5] hover:text-white" onClick={() => openEdit(q)}>
+                      <X size={14} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={closeForm}>
+          <div
+            className="h-full w-[500px] overflow-y-auto border-l border-white/[.08] bg-[#0b0c14] p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-base font-semibold">{editing ? "Edit Quote" : "New Quote"}</h2>
+              <button className="text-[#B9BAC5] hover:text-white" onClick={closeForm}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4 pb-6">
+              <div>
+                <label className="mb-1 block text-[11px] text-[#B9BAC5]">Customer *</label>
+                <select
+                  className="input"
+                  value={form.customer_id}
+                  onChange={(e) => setForm({ ...form, customer_id: e.target.value })}
+                >
+                  <option value="">Select...</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[11px] text-[#B9BAC5]">Box Name</label>
+                <input
+                  className="input"
+                  value={form.box_name}
+                  onChange={(e) => setForm({ ...form, box_name: e.target.value })}
+                  placeholder="e.g., Standard Carton"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="mb-1 block text-[11px] text-[#B9BAC5]">Ply</label>
+                  <select
+                    className="input"
+                    value={form.ply}
+                    onChange={(e) => setForm({ ...form, ply: parseInt(e.target.value) })}
+                  >
+                    <option value={3}>3-Ply</option>
+                    <option value={5}>5-Ply</option>
+                    <option value={7}>7-Ply</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-[#B9BAC5]">Quantity</label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={form.quantity}
+                    onChange={(e) => setForm({ ...form, quantity: parseInt(e.target.value) || 1000 })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="mb-1 block text-[11px] text-[#B9BAC5]">Length (mm)</label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={form.length_mm}
+                    onChange={(e) => setForm({ ...form, length_mm: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-[#B9BAC5]">Width (mm)</label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={form.width_mm}
+                    onChange={(e) => setForm({ ...form, width_mm: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-[#B9BAC5]">Height (mm)</label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={form.height_mm}
+                    onChange={(e) => setForm({ ...form, height_mm: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="mb-1 block text-[11px] text-[#B9BAC5]">Paper Rate (₹/kg)</label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={form.paper_rate_per_kg}
+                    onChange={(e) => setForm({ ...form, paper_rate_per_kg: parseFloat(e.target.value) || 80 })}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-[#B9BAC5]">Conversion (%)</label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={form.conversion_pct}
+                    onChange={(e) => setForm({ ...form, conversion_pct: parseFloat(e.target.value) || 20 })}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[11px] text-[#B9BAC5]">Margin (%)</label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={form.margin_pct}
+                    onChange={(e) => setForm({ ...form, margin_pct: parseFloat(e.target.value) || 15 })}
+                  />
+                </div>
+              </div>
+
+              <button
+                className="btn w-full bg-blue-600 hover:bg-blue-700"
+                onClick={() => calculateQuote(form)}
+              >
+                Calculate
+              </button>
+
+              {calculated && (
+                <div className="bg-white/[.05] rounded p-3 space-y-1 text-sm">
+                  <p>Sheet: {calculated.sheet_length_mm} × {calculated.sheet_width_mm} mm</p>
+                  <p>Weight/Box: {calculated.weight_kg.toFixed(3)} kg</p>
+                  <p>Cost/Box: ₹{calculated.cost_per_box.toFixed(2)}</p>
+                  <p className="font-semibold text-green-400">Rate: ₹{calculated.quoted_rate.toFixed(2)}</p>
+                </div>
+              )}
+
+              {saveQuote.isError && <p className="text-xs text-red-400">{(saveQuote.error as Error).message}</p>}
+
+              <button
+                className="btn w-full"
+                disabled={!calculated || saveQuote.isPending}
+                onClick={() => saveQuote.mutate()}
+              >
+                {saveQuote.isPending ? "Saving..." : "Save Quote"}
+              </button>
+            </div>
           </div>
-          <table className="w-full text-[13px]">
-            <tbody>
-              {saved.map((q) => (
-                <tr key={q.id} className="border-b border-white/[.04]">
-                  <td className="px-4 py-2.5 font-medium">{q.quote_no}</td>
-                  <td className="px-4 py-2.5 text-[#B9BAC5]">{q.box_name}</td>
-                  <td className="px-4 py-2.5 text-[#B9BAC5]">{q.ply}-ply</td>
-                  <td className="px-4 py-2.5">₹{Number(q.quoted_rate).toFixed(2)}</td>
-                  <td className="px-4 py-2.5 text-[#B9BAC5]">x {q.quantity}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       )}
-    </div>
-  );
-}
-
-function Row({ k, v, highlight }: { k: string; v: string; highlight?: boolean }) {
-  return (
-    <div className="flex justify-between">
-      <span className="text-[#B9BAC5]">{k}</span>
-      <span className={highlight ? "font-semibold text-[#9D6CFF]" : ""}>{v}</span>
     </div>
   );
 }
