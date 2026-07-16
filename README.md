@@ -1,61 +1,53 @@
 # Threxa ERP — Carton Box Manufacturer
 
-Custom ERP built on Vite + React + TypeScript + Supabase, deployed on Vercel.
-Four modules: Document Automation · Order & Production · Dispatch & Delivery · Dashboard & Reporting.
+A custom ERP system for order management, production tracking, dispatch, and financial reporting. Built with Vite + React + TypeScript + Supabase, deployed on Vercel.
 
-## Browser-only setup (no terminal, ~20 minutes)
+## Modules
 
-### 1. Get this code into GitHub
-- Create a new **private** repo on github.com (e.g. `threxa-erp`). Do NOT initialize with a README.
-- On the empty-repo page click **"uploading an existing file"**, then drag the *contents* of this
-  folder (not the folder itself) into the upload area. Chrome preserves the folder structure.
-- Commit to `main`.
+- **Documents**: Quotation calculator (GSM/BF/ply), invoices, challans
+- **Orders & Production**: Order pipeline, inventory, production tracking
+- **Payroll**: Employees, attendance, payroll register
+- **Dispatch**: Shipment tracking
+- **Dashboard**: Orders, revenue, receivables at a glance
 
-### 2. Supabase
-- supabase.com → New project (region: Mumbai `ap-south-1`).
-- SQL Editor → paste the whole of `supabase/migrations/001_initial_schema.sql` → **Run**.
-- Authentication → Users → **Add user** → create the client's login (email + password).
-  Turn OFF public signups: Authentication → Providers → Email → disable "Allow new users to sign up".
-- Project Settings → API: copy the **Project URL** and **anon public key**.
+## Quick Start (Browser Only)
 
-### 3. Vercel
-- vercel.com → Add New Project → import the GitHub repo.
-- Framework preset: **Vite** (auto-detected). No build settings to change.
-- Environment Variables:
-  - `VITE_SUPABASE_URL` = your project URL
+### 1. Set up GitHub
+- Create a private repo: `threxa-erp`
+- On GitHub, click "uploading an existing file" and drag the folder contents into the upload area
+- Commit to `main`
+
+### 2. Set up Supabase
+- Create a new project at supabase.com (region: Mumbai)
+- SQL Editor → paste `supabase/migrations/001_initial_schema.sql` → Run
+- Authentication → Users → Add user (email + password)
+- Turn off public signups: Authentication → Providers → Email → disable "Allow new users to sign up"
+- Copy your Project URL and anon public key from Project Settings → API
+
+### 3. Deploy to Vercel
+- Go to vercel.com → Add New Project → select your GitHub repo
+- Framework: Vite (auto-detected)
+- Add Environment Variables:
+  - `VITE_SUPABASE_URL` = your Project URL
   - `VITE_SUPABASE_ANON_KEY` = your anon key
-- Deploy. Every future push to `main` redeploys automatically.
+- Deploy (future pushes to `main` redeploy automatically)
 
-### 4. Daily development, no terminal
-- **Quick edits**: open the repo on github.com and press `.` → github.dev (VS Code in browser).
-  Commit → Vercel redeploys in ~1 min.
-- **Live dev server with hot reload**: open
-  `https://stackblitz.com/github/<your-username>/threxa-erp`
-  StackBlitz runs `npm install` + `vite dev` inside your browser tab.
-  Add the two env vars in StackBlitz via a `.env` file (never commit it — it's for the sandbox only).
-  Commit back to GitHub from StackBlitz when done.
+### 4. Local Development
 
-## Where things are
-- `supabase/migrations/` — schema is source-controlled here; run new files in the SQL Editor.
-- `src/pages/Customers.tsx` — the reference CRUD pattern. Every list/master page copies this shape.
-- `src/components/ThrexaIntro.tsx` — the cinematic opening. Plays once per session;
-  `logoTarget` is tuned to where the sidebar lockup sits in `Layout.tsx`.
-- Document numbering — call the Postgres function: `select next_doc_number('order')`
-  (keys: `order`, `job`, `challan`, `invoice`).
+**Quick edits**: Open the repo on github.com, press `.` to open github.dev, edit, and commit.
 
-## Modules status
-- Module 1 — Documents: Quotation Calculator ✅ (GSM x BF, 3/5/7-ply) · Proforma/GST invoices + Challan PDFs → Phase 3
-- Module 2 — Orders/Production/Inventory: Reel Stock ✅ (30-day credit) · Cash Book ✅ · Orders/Production → Phase 2
-- Module 3 — Payroll: Employees ✅ · Attendance ✅ · Payroll register + CSV export ✅
-- Module 4 — Dispatch: schema live, UI → Phase 4
-- Module 5 — Dashboard: live counts ✅ · charts/receivables → Phase 5
-- Role-based login ✅ (owner/admin/production/dispatch/accounts/staff — set role in profiles table)
+**Full dev with live reload**: Open `https://stackblitz.com/github/<your-username>/threxa-erp` — StackBlitz runs the dev server in your browser. Add a `.env` file there with your Supabase credentials (never commit it). When done, commit back to GitHub.
 
-## Build phases
-0. ✅ Scaffold, auth, shell, schema (this repo)
-1. Masters: customers ✅ + box specs
-2. Orders pipeline + production stage tracking
-3. Documents: invoice / challan / quotation PDFs (jsPDF) + numbering
-4. Dispatch + WhatsApp automation (n8n webhook on Hetzner)
-5. Dashboard: revenue, funnel, production load (Recharts)
-6. Roles (RLS tightening), polish, client onboarding
+## Key Patterns
+
+- **CRUD example**: `src/pages/Customers.tsx`
+- **Opening animation**: `src/components/ThrexaIntro.tsx` (plays once per session)
+- **Document numbering**: Call the SQL function `select next_doc_number('order')` — keys: `order`, `job`, `challan`, `invoice`
+- **Roles**: Set `role` in the profiles table — supports owner, admin, production, dispatch, accounts, staff
+
+## File Structure
+
+- `supabase/migrations/` — database schema (run new migrations in Supabase SQL Editor)
+- `src/pages/` — list and detail pages for each module
+- `src/components/` — reusable UI and modal components
+- `.env.example` — copy to `.env` locally with your Supabase keys
