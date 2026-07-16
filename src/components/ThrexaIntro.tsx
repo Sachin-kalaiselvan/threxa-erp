@@ -63,6 +63,8 @@ interface LogoTarget {
 interface ThrexaIntroProps {
   children: React.ReactNode;
   logoTarget?: LogoTarget;
+  /** When true (e.g. the user just signed in), the intro ALWAYS plays —
+   *  overriding the once-per-session flag and prefers-reduced-motion. */
   forcePlay?: boolean;
 }
 
@@ -73,28 +75,45 @@ export default function ThrexaIntro({
 }: ThrexaIntroProps) {
   const [showIntro, setShowIntro] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const startedRef = useRef(false);
   const starWrapRef = useRef<HTMLDivElement>(null);
   const cityLightsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
-    const alreadyPlayed = typeof window !== "undefined" && sessionStorage.getItem(STORAGE_KEY);
-    const reducedMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }, []);
 
-    if (reducedMotion || (alreadyPlayed && !forcePlay)) {
+  // Trigger logic — reruns when forcePlay flips (i.e. a fresh sign-in),
+  // so a login that happens after mount still fires the intro.
+  useEffect(() => {
+    if (startedRef.current) return; // never restart mid-play
+
+    const params = new URLSearchParams(window.location.search);
+    const forcedByUrl = params.get("intro") === "1"; // debug/demo: ?intro=1
+    const force = forcePlay || forcedByUrl;
+
+    const alreadyPlayed = Boolean(sessionStorage.getItem(STORAGE_KEY));
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (!force && (reducedMotion || alreadyPlayed)) {
+      if (reducedMotion) {
+        console.info("[ThrexaIntro] skipped: OS prefers-reduced-motion is on. Sign in or add ?intro=1 to force.");
+      }
       setShowIntro(false);
       return;
     }
 
+    startedRef.current = true;
     setShowIntro(true);
-    sessionStorage.setItem(STORAGE_KEY, "1");
 
-    const removeTimer = setTimeout(() => setShowIntro(false), T_REMOVE * 1000);
+    const removeTimer = setTimeout(() => {
+      setShowIntro(false);
+      // mark played only AFTER it actually completed — an interrupted
+      // play no longer burns the once-per-session flag
+      sessionStorage.setItem(STORAGE_KEY, "1");
+    }, T_REMOVE * 1000);
     return () => clearTimeout(removeTimer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [forcePlay]);
 
   useEffect(() => {
     if (!showIntro || !starWrapRef.current) return;
@@ -452,9 +471,7 @@ export default function ThrexaIntro({
           transform:scaleY(0); animation: txTraceV .5s ease 8.35s forwards; }
         @keyframes txTraceV{ to{ transform:scaleY(1); } }
 
-        @media (prefers-reduced-motion: reduce){
-          .tx-scene, .tx-logo-icon, .tx-wordmark, .tx-trace-h, .tx-trace-v, .tx-word-streak{ display:none; }
-        }
+
       `}</style>
     </>
   );
