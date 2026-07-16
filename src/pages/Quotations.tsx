@@ -87,12 +87,12 @@ export default function Quotations() {
       { kind: "flute", gsm: 125, bf: 5.5 },
       { kind: "medium", gsm: 100, bf: 6 },
     ];
-    const total_gsm = layers.reduce((sum, l) => sum + l.gsm, 0);
+    const total_gsm = layers.reduce((sum: number, l: any) => sum + l.gsm, 0);
     const avg_bf = layers.reduce((sum, l) => sum + l.bf, 0) / layers.length;
 
     // Weight
     const sheet_area_m2 = (sheet_length_mm * sheet_width_mm) / 1000000;
-    const gsm_with_takeup = total_gsm + (flute_takeup - 1) * layers.find((l) => l.kind === "flute")?.gsm || 0;
+    const total_gsm = layers.reduce((sum: number, l: any) => sum + l.gsm, 0);
     const weight_per_box_kg = (gsm_with_takeup * sheet_area_m2) / 1000;
     const total_weight_kg = weight_per_box_kg * (quantity || 1);
     const cost_per_box = weight_per_box_kg * paper_rate_per_kg;
