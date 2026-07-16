@@ -45,6 +45,7 @@ function NotConfigured() {
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [freshLogin, setFreshLogin] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -70,8 +71,10 @@ export default function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (mounted) {
+        if (event === "SIGNED_IN") setFreshLogin(true);
+        if (event === "SIGNED_OUT") setFreshLogin(false);
         setSession(session);
         queryClient.invalidateQueries();
       }
@@ -100,7 +103,7 @@ export default function App() {
   }
 
   return (
-    <ThrexaIntro logoTarget={{ top: 14, left: 84 }}>
+    <ThrexaIntro logoTarget={{ top: 14, left: 84 }} forcePlay={freshLogin}>
       <Layout>
         <Routes>
           <Route path="/" element={<Dashboard />} />
