@@ -46,6 +46,7 @@ export default function Invoices() {
   const [editing, setEditing] = useState<Invoice | null>(null);
   const [form, setForm] = useState(emptyInvoice);
   const [selectedOrder, setSelectedOrder] = useState<string>("");
+  const [docType, setDocType] = useState<"proforma" | "tax_invoice">("tax_invoice");
   const [showPDF, setShowPDF] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
@@ -106,6 +107,7 @@ export default function Invoices() {
               .from("invoices")
               .update({
                 customer_id: form.customer_id,
+                doc_type: docType,
                 invoice_date: form.invoice_date,
                 due_date: form.due_date || null,
                 subtotal,
@@ -122,7 +124,7 @@ export default function Invoices() {
             const invoiceNo = await generateInvoiceNumber();
             const { error } = await supabase.from("invoices").insert({
               invoice_no: invoiceNo,
-              doc_type: form.doc_type,
+              doc_type: docType,
               order_id: selectedOrder,
               customer_id: form.customer_id,
               invoice_date: form.invoice_date,
@@ -192,6 +194,7 @@ export default function Invoices() {
     setEditing(null);
     setForm(emptyInvoice);
     setSelectedOrder("");
+    setDocType("tax_invoice");
     setShowForm(true);
   };
 
@@ -205,6 +208,7 @@ export default function Invoices() {
       subtotal: inv.subtotal,
       gst_rate: inv.gst_rate,
     });
+    setDocType(inv.doc_type);
     setSelectedOrder(inv.order_id || "");
     setShowForm(true);
   };
@@ -213,6 +217,7 @@ export default function Invoices() {
     setShowForm(false);
     setEditing(null);
     setForm(emptyInvoice);
+    setDocType("tax_invoice");
   };
 
   const filtered = invoices.filter((inv) =>
@@ -318,8 +323,8 @@ export default function Invoices() {
                 <label className="mb-1 block text-[11px] text-[#B9BAC5]">Type</label>
                 <select
                   className="input"
-                  value={form.doc_type}
-                  onChange={(e) => setForm({ ...form, doc_type: e.target.value as "tax_invoice" | "proforma" })}
+                  value={docType}
+                  onChange={(e) => setDocType(e.target.value as "tax_invoice" | "proforma")}
                 >
                   <option value="tax_invoice">Tax Invoice</option>
                   <option value="proforma">Proforma</option>
@@ -336,7 +341,7 @@ export default function Invoices() {
                   <option value="">Select order...</option>
                   {orders.map((o) => (
                     <option key={o.id} value={o.id}>
-                      {o.order_no} — {o.customers?.name}
+                      {(o as any).order_no} — {(o as any).customers?.name}
                     </option>
                   ))}
                 </select>
