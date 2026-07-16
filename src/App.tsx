@@ -1,44 +1,95 @@
-import { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./lib/supabase";
-import Layout from "./components/Layout";
+import { useQueryClient } from "@tanstack/react-query";
+import { Routes, Route } from "react-router-dom";
+
+// Pages
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Customers from "./pages/Customers";
+import Documents from "./pages/Documents";
 import Orders from "./pages/Orders";
-import Production from "./pages/Production";
-import Quotations from "./pages/Quotations";
-import Invoices from "./pages/Invoices";
 import Dispatch from "./pages/Dispatch";
-import Employees from "./pages/Employees";
-import Attendance from "./pages/Attendance";
-import Payroll from "./pages/Payroll";
-import CashBook from "./pages/CashBook";
-import Inventory from "./pages/Inventory";
+import Reports from "./pages/Reports";
+
+// If Supabase is not configured, show error
+if (!supabase) {
+  function NotConfigured() {
+    return (
+      <div className="min-h-screen bg-[#0A0B13] flex items-center justify-center">
+        <div className="text-center text-white">
+          <h1 className="text-3xl font-bold mb-4">Threxa ERP</h1>
+
+          <p className="text-gray-400 mb-6">
+            Supabase has not been configured yet.
+          </p>
+
+          <p className="text-sm text-gray-500">
+            Add these environment variables in Vercel:
+          </p>
+          <ul className="text-sm text-gray-400 mt-3 space-y-1">
+            <li>VITE_SUPABASE_URL</li>
+            <li>VITE_SUPABASE_ANON_KEY</li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
+
+  export default NotConfigured;
+}
 
 export default function App() {
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
+    let mounted = true;
+
+    async function getSession() {
+      try {
+        const {
+          data: { session },
+        } = await supabase!.auth.getSession();
+
+        if (mounted) {
+          setSession(session);
+        }
+      } catch (error) {
+        console.error("Failed to get session:", error);
+        if (mounted) {
+          setSession(null);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    getSession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+    } = supabase!.auth.onAuthStateChange((_event, session) => {
+      if (mounted) {
+        setSession(session);
+        queryClient.invalidateQueries();
+      }
     });
 
-    return () => subscription?.unsubscribe();
-  }, []);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [queryClient]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#0a0b13]">
-        <div className="text-[#B9BAC5]">Loading...</div>
+      <div className="min-h-screen bg-[#0A0B13] flex items-center justify-center">
+        <div className="text-white">Loading...</div>
       </div>
     );
   }
@@ -48,24 +99,12 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/customers" element={<Customers />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/production" element={<Production />} />
-          <Route path="/quotations" element={<Quotations />} />
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/dispatch" element={<Dispatch />} />
-          <Route path="/employees" element={<Employees />} />
-          <Route path="/attendance" element={<Attendance />} />
-          <Route path="/payroll" element={<Payroll />} />
-          <Route path="/cashbook" element={<CashBook />} />
-          <Route path="/inventory" element={<Inventory />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Layout>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/documents" element={<Documents />} />
+      <Route path="/orders" element={<Orders />} />
+      <Route path="/dispatch" element={<Dispatch />} />
+      <Route path="/reports" element={<Reports />} />
+    </Routes>
   );
 }
