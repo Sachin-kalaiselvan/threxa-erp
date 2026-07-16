@@ -33,7 +33,6 @@ interface OrderWithCustomer extends Order {
 
 const emptyInvoice = {
   customer_id: "",
-  doc_type: "tax_invoice" as const,
   invoice_date: new Date().toISOString().split("T")[0],
   due_date: "",
   subtotal: 0,
@@ -46,7 +45,7 @@ export default function Invoices() {
   const [editing, setEditing] = useState<Invoice | null>(null);
   const [form, setForm] = useState(emptyInvoice);
   const [selectedOrder, setSelectedOrder] = useState<string>("");
-  const [showPDF, setShowPDF] = useState<string | null>(null);
+  const [docType, setDocType] = useState<"proforma" | "tax_invoice">("tax_invoice");
   const [search, setSearch] = useState("");
 
   // Fetch invoices
@@ -95,7 +94,7 @@ export default function Invoices() {
         const order = orders.find((o) => o.id === selectedOrder);
         if (order?.order_items) {
           const subtotal = order.order_items.reduce((sum: number, item: any) => sum + item.amount, 0);
-          const isInterstate = form.gst_rate === 18; // Simplified
+          const isInterstate = form.gst_rate === 18;
           const gstAmount = (subtotal * form.gst_rate) / 100;
           const cgstAmount = isInterstate ? 0 : gstAmount / 2;
           const sgstAmount = isInterstate ? 0 : gstAmount / 2;
@@ -106,6 +105,7 @@ export default function Invoices() {
               .from("invoices")
               .update({
                 customer_id: form.customer_id,
+                doc_type: docType,
                 invoice_date: form.invoice_date,
                 due_date: form.due_date || null,
                 subtotal,
@@ -122,7 +122,7 @@ export default function Invoices() {
             const invoiceNo = await generateInvoiceNumber();
             const { error } = await supabase.from("invoices").insert({
               invoice_no: invoiceNo,
-              doc_type: form.doc_type,
+              doc_type: docType,
               order_id: selectedOrder,
               customer_id: form.customer_id,
               invoice_date: form.invoice_date,
@@ -192,6 +192,7 @@ export default function Invoices() {
     setEditing(null);
     setForm(emptyInvoice);
     setSelectedOrder("");
+    setDocType("tax_invoice");
     setShowForm(true);
   };
 
@@ -199,12 +200,12 @@ export default function Invoices() {
     setEditing(inv);
     setForm({
       customer_id: inv.customer_id,
-      doc_type: inv.doc_type,
       invoice_date: inv.invoice_date,
       due_date: inv.due_date || "",
       subtotal: inv.subtotal,
       gst_rate: inv.gst_rate,
     });
+    setDocType(inv.doc_type);
     setSelectedOrder(inv.order_id || "");
     setShowForm(true);
   };
@@ -213,6 +214,8 @@ export default function Invoices() {
     setShowForm(false);
     setEditing(null);
     setForm(emptyInvoice);
+    setDocType("tax_invoice");
+    setSelectedOrder("");
   };
 
   const filtered = invoices.filter((inv) =>
@@ -318,8 +321,8 @@ export default function Invoices() {
                 <label className="mb-1 block text-[11px] text-[#B9BAC5]">Type</label>
                 <select
                   className="input"
-                  value={form.doc_type}
-                  onChange={(e) => setForm({ ...form, doc_type: e.target.value as "tax_invoice" | "proforma" })}
+                  value={docType}
+                  onChange={(e) => setDocType(e.target.value as "tax_invoice" | "proforma")}
                 >
                   <option value="tax_invoice">Tax Invoice</option>
                   <option value="proforma">Proforma</option>
@@ -336,7 +339,7 @@ export default function Invoices() {
                   <option value="">Select order...</option>
                   {orders.map((o) => (
                     <option key={o.id} value={o.id}>
-                      {o.order_no} — {o.customers?.name}
+                      {(o as any).order_no} — {(o as any).customers?.name}
                     </option>
                   ))}
                 </select>

@@ -1,58 +1,42 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root{
-  --bg:#05060A;
-  --surface:#0b0c14;
-  --card:rgba(255,255,255,.03);
-  --border:rgba(255,255,255,.07);
-  --blue:#356BFF;
-  --purple:#8B5CF6;
-  --glow:#9D6CFF;
-  --ink:#FFFFFF;
-  --secondary:#B9BAC5;
+@layer components {
+  .input {
+    @apply bg-[#1a1b24] border rounded px-3 py-2 text-[13px] text-white placeholder-[#B9BAC5] focus:outline-none transition-colors disabled:opacity-50;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .input:focus {
+    border-color: rgba(59, 130, 246, 0.5);
+  }
+
+  .btn {
+    @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .card {
+    @apply bg-[#0b0c14] rounded-lg;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
 }
 
-html, body, #root { height: 100%; }
-body{
-  background: linear-gradient(180deg, #07070f, #0a0a13);
-  color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
-.card{
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
-.input{
-  background: rgba(255,255,255,.04);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 13px;
-  color: var(--ink);
-  outline: none;
-  width: 100%;
+
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
-.input:focus{ border-color: rgba(157,108,255,.5); }
-.btn{
-  background: linear-gradient(135deg, var(--purple), var(--blue));
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 500;
-  color: white;
-  cursor: pointer;
-  border: none;
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
 }
-.btn:hover{ opacity: .9; }
-.btn-ghost{
-  background: rgba(255,255,255,.05);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 13px;
-  color: var(--secondary);
-  cursor: pointer;
-}
-.btn-ghost:hover{ color: var(--ink); }

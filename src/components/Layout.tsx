@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, BarChart3, Package, Zap, FileText, Truck, Users, LogOut, Menu, X, ReceiptText, User } from "lucide-react";
+import { ChevronDown, BarChart3, Package, Zap, FileText, Truck, Users, LogOut, Menu, X, DollarSign, User } from "lucide-react";
 import { supabase } from "../lib/supabase";
 
 interface NavItem {
@@ -15,7 +15,7 @@ const navItems: NavItem[] = [
   { label: "Orders", path: "/orders", icon: <Package size={18} /> },
   { label: "Production", path: "/production", icon: <Zap size={18} /> },
   { label: "Quotations", path: "/quotations", icon: <FileText size={18} /> },
-  { label: "Invoices", path: "/invoices", icon: <ReceiptText size={18} /> },
+  { label: "Invoices", path: "/invoices", icon: <DollarSign size={18} /> },
   { label: "Dispatch", path: "/dispatch", icon: <Truck size={18} /> },
 ];
 
