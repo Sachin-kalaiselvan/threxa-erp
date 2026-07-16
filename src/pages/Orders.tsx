@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, X, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import type { Order, Customer, BoxSpec } from "../types/db";
 
@@ -148,8 +148,8 @@ export default function Orders() {
 
   // Update order status
   const updateStatus = useMutation({
-    mutationFn: async (orderId: string, status: string) => {
-      const { error } = await supabase.from("orders").update({ status }).eq("id", orderId);
+    mutationFn: async (variables: { orderId: string; status: string }) => {
+      const { error } = await supabase.from("orders").update({ status: variables.status }).eq("id", variables.orderId);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
@@ -425,7 +425,7 @@ export default function Orders() {
                   <select
                     className="input"
                     value={editing.status}
-                    onChange={(e) => updateStatus.mutate(editing.id, e.target.value)}
+                    onChange={(e) => updateStatus.mutate({ orderId: editing.id, status: e.target.value })}
                   >
                     <option value="pending">Pending</option>
                     <option value="confirmed">Confirmed</option>
