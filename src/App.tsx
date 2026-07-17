@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import Layout from "./components/Layout";
+import BootManager from "./components/BootManager";
 
 // Pages — these match the actual files in src/pages/
 import Login from "./pages/Login";
@@ -99,23 +100,25 @@ export default function App() {
   }
 
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/customers" element={<Customers />} />
-        <Route path="/orders" element={<Orders />} />
-        <Route path="/production" element={<Production />} />
-        <Route path="/quotations" element={<Quotations />} />
-        <Route path="/invoices" element={<Invoices />} />
-        <Route path="/dispatch" element={<Dispatch />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/inventory" element={<Inventory />} />
-        <Route path="/employees" element={<Employees />} />
-        <Route path="/attendance" element={<Attendance />} />
-        <Route path="/payroll" element={<Payroll />} />
-        <Route path="/cashbook" element={<CashBook />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Layout>
+    <BootManager>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/customers" element={<Customers />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/production" element={<Production />} />
+          <Route path="/quotations" element={<Quotations />} />
+          <Route path="/invoices" element={<Invoices />} />
+          <Route path="/dispatch" element={<Dispatch />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/employees" element={<Employees />} />
+          <Route path="/attendance" element={<Attendance />} />
+          <Route path="/payroll" element={<Payroll />} />
+          <Route path="/cashbook" element={<CashBook />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
+    </BootManager>
   );
 }
