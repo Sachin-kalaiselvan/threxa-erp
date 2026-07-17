@@ -1,206 +1,284 @@
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { useState } from "react";
+import { TrendingUp } from "lucide-react";
 
-interface Stats {
-  totalRevenue: number;
-  totalOrders: number;
-  totalCustomers: number;
-  recentOrders: Array<{
-    id: string;
-    order_no: string;
-    amount: number;
-    status: "completed" | "in_production" | "pending";
-    date: string;
-  }>;
+interface KPICard {
+  title: string;
+  value: string | number;
+  change: number;
+  icon: string;
+  bgColor: string;
 }
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<Stats>({
-    totalRevenue: 8456000,
-    totalOrders: 47,
-    totalCustomers: 23,
-    recentOrders: [
-      {
-        id: "1",
-        order_no: "ORD-2024-001",
-        amount: 245000,
-        status: "in_production",
-        date: "15 Jul 2024",
-      },
-      {
-        id: "2",
-        order_no: "ORD-2024-002",
-        amount: 185500,
-        status: "completed",
-        date: "14 Jul 2024",
-      },
-      {
-        id: "3",
-        order_no: "ORD-2024-003",
-        amount: 312750,
-        status: "pending",
-        date: "12 Jul 2024",
-      },
-    ],
-  });
+  const [userName] = useState("Josiah");
+
+  const kpiCards: KPICard[] = [
+    {
+      title: "Total Revenue",
+      value: "$85,500",
+      change: 10.5,
+      icon: "💰",
+      bgColor: "bg-yellow-50",
+    },
+    {
+      title: "Total Orders",
+      value: "1000",
+      change: 10.5,
+      icon: "📦",
+      bgColor: "bg-purple-50",
+    },
+    {
+      title: "Total Customers",
+      value: "300",
+      change: 10.5,
+      icon: "👥",
+      bgColor: "bg-cyan-50",
+    },
+  ];
+
+  const topProducts = [
+    { name: "Realistic", code: "8812", avatar: "🎨" },
+    { name: "Monstera", code: "8832", avatar: "🌿" },
+    { name: "Product", code: "9871", avatar: "📦" },
+    { name: "Product", code: "2211", avatar: "🎯" },
+  ];
+
+  const salesData = [
+    { month: "Jan", value: 25000 },
+    { month: "Feb", value: 32000 },
+    { month: "Mar", value: 38000 },
+    { month: "Apr", value: 42000 },
+    { month: "May", value: 48000 },
+    { month: "Jun", value: 55000 },
+    { month: "Jul", value: 62000 },
+    { month: "Aug", value: 70000 },
+    { month: "Sep", value: 65000 },
+    { month: "Oct", value: 72000 },
+  ];
+
+  const maxValue = Math.max(...salesData.map((d) => d.value));
 
   return (
     <div className="min-h-screen p-8" style={{ background: "#e8e8e8" }}>
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-full">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900" style={{ letterSpacing: "-0.5px" }}>
-              Welcome, Admin
-            </h1>
-            <p className="text-gray-500 mt-1">Here's what's happening in your manufacturing pipeline.</p>
+            <h1 className="text-4xl font-bold text-gray-900">Welcome, {userName} 🎉</h1>
+            <p className="text-gray-500 mt-1">Here's what's happening in your store.</p>
           </div>
           <div className="flex gap-3">
-            <button className="bg-white text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 font-medium border border-gray-200">
+            <button className="bg-white text-gray-600 p-3 rounded-full hover:bg-gray-100 transition-colors border border-gray-200">
               🔍
             </button>
-            <button className="bg-white text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 font-medium border border-gray-200">
+            <button className="bg-white text-gray-600 p-3 rounded-full hover:bg-gray-100 transition-colors border border-gray-200">
               🌙
             </button>
-            <button className="bg-white text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 font-medium border border-gray-200">
-              🔔
-            </button>
-          </div>
-        </div>
-
-        {/* KPI Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Revenue Card */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm" style={{ background: "linear-gradient(135deg, #fff8e6 0%, #ffe8cc 100%)" }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Revenue</p>
-                <p className="text-4xl font-bold text-gray-900 mt-3">₹{(stats.totalRevenue / 100000).toFixed(1)}L</p>
-                <p className="text-green-600 text-sm font-medium mt-3">📈 18.2% higher vs previous month</p>
-              </div>
-              <div className="text-5xl">💰</div>
-            </div>
-          </div>
-
-          {/* Orders Card */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm" style={{ background: "linear-gradient(135deg, #e6f0ff 0%, #cce0ff 100%)" }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Orders</p>
-                <p className="text-4xl font-bold text-gray-900 mt-3">{stats.totalOrders}</p>
-                <p className="text-blue-600 text-sm font-medium mt-3">Active & Completed</p>
-              </div>
-              <div className="text-5xl">📦</div>
-            </div>
-          </div>
-
-          {/* Customers Card */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm" style={{ background: "linear-gradient(135deg, #e6ffe6 0%, #ccffcc 100%)" }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Customers</p>
-                <p className="text-4xl font-bold text-gray-900 mt-3">{stats.totalCustomers}</p>
-                <p className="text-green-600 text-sm font-medium mt-3">Registered partners</p>
-              </div>
-              <div className="text-5xl">👥</div>
-            </div>
-          </div>
-
-          {/* Pending Card */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm" style={{ background: "linear-gradient(135deg, #ffe6e6 0%, #ffcccc 100%)" }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Pending Orders</p>
-                <p className="text-4xl font-bold text-gray-900 mt-3">12</p>
-                <p className="text-red-600 text-sm font-medium mt-3">Awaiting attention</p>
-              </div>
-              <div className="text-5xl">⏳</div>
+            <div className="relative">
+              <button className="bg-white text-gray-600 p-3 rounded-full hover:bg-gray-100 transition-colors border border-gray-200">
+                🔔
+              </button>
+              <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                2
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Recent Orders */}
-        <div className="bg-white rounded-2xl p-8 shadow-sm mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Orders</h2>
-          <div className="space-y-4">
-            {stats.recentOrders.map((order) => (
-              <div key={order.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg border border-gray-100">
-                <div>
-                  <p className="font-semibold text-gray-900">{order.order_no}</p>
-                  <p className="text-sm text-gray-500">{order.date}</p>
+        {/* Main Grid Layout */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left Column - KPI Cards */}
+          <div className="col-span-3 space-y-6">
+            {kpiCards.map((card, index) => (
+              <div key={index} className={`${card.bgColor} rounded-2xl p-6 shadow-sm`}>
+                <div className="flex items-start justify-between mb-4">
+                  <span className="text-3xl">{card.icon}</span>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-gray-900">₹{(order.amount / 1000).toFixed(0)}K</p>
-                  <p
-                    className={`text-xs font-semibold px-3 py-1 rounded-full inline-block mt-1 ${
-                      order.status === "completed"
-                        ? "bg-green-100 text-green-700"
-                        : order.status === "in_production"
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-amber-100 text-amber-700"
-                    }`}
-                  >
-                    {order.status === "completed" ? "Completed" : order.status === "in_production" ? "In Production" : "Pending"}
-                  </p>
+                <p className="text-gray-600 text-sm font-medium">{card.title}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{card.value}</p>
+                <div className="flex items-center gap-1 mt-3">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <span className="text-green-600 font-medium text-sm">{card.change}%</span>
+                  <span className="text-gray-500 text-sm">From Last Day</span>
                 </div>
               </div>
             ))}
-          </div>
-        </div>
 
-        {/* Analytics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Production Status */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 mb-6">Production Status</h3>
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Completed</span>
-                  <span className="text-sm font-bold text-gray-900">78%</span>
+            {/* Sales Section */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Sales</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-600">Total Sales</p>
+                  <p className="text-2xl font-bold text-gray-900">9,586</p>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div className="bg-green-500 h-3 rounded-full" style={{ width: "78%" }}></div>
+                <div>
+                  <p className="text-sm text-gray-600">This Month</p>
+                  <p className="text-2xl font-bold text-gray-900">9,586</p>
                 </div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">In Progress</span>
-                  <span className="text-sm font-bold text-gray-900">18%</span>
+                <div>
+                  <p className="text-sm text-gray-600">Today</p>
+                  <p className="text-2xl font-bold text-gray-900">9,586</p>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div className="bg-blue-500 h-3 rounded-full" style={{ width: "18%" }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Pending</span>
-                  <span className="text-sm font-bold text-gray-900">4%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div className="bg-amber-500 h-3 rounded-full" style={{ width: "4%" }}></div>
+                <div className="flex items-center gap-1 pt-2">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <span className="text-green-600 font-medium text-sm">20% increased</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Top Customers */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <h3 className="text-lg font-bold text-gray-900 mb-6">Top Customers</h3>
-            <div className="space-y-4">
-              {[
-                { name: "ABC Packaging Ltd", orders: "12 orders", value: "₹42.5L" },
-                { name: "Global Exports Inc", orders: "8 orders", value: "₹31.2L" },
-                { name: "XYZ Retail Solutions", orders: "6 orders", value: "₹18.5L" },
-              ].map((customer, i) => (
-                <div key={i} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-semibold text-gray-900">{customer.name}</p>
-                    <p className="text-sm text-gray-500">{customer.orders}</p>
-                  </div>
-                  <span className="font-bold text-gray-900">{customer.value}</span>
+          {/* Middle Column - Charts */}
+          <div className="col-span-6 space-y-6">
+            {/* Orders Overview Chart */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Orders Overview</h3>
+                <div className="flex gap-2">
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-amber-400 rounded-full"></span>
+                    <span className="text-xs text-gray-600">Orders</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-purple-400 rounded-full"></span>
+                    <span className="text-xs text-gray-600">Profit</span>
+                  </span>
                 </div>
-              ))}
+              </div>
+
+              {/* Mini Chart */}
+              <div className="h-64 flex items-flex-end justify-between gap-2 px-2">
+                {salesData.map((data, idx) => (
+                  <div key={idx} className="flex-1 flex flex-col items-center justify-end">
+                    <div className="relative w-full h-48 flex items-flex-end justify-center">
+                      {/* Dual bars for Orders and Profit */}
+                      <div className="flex gap-1 items-flex-end h-full">
+                        <div
+                          className="bg-amber-400 rounded-t-sm flex-1"
+                          style={{ height: `${(data.value / maxValue) * 180}px` }}
+                        ></div>
+                        <div
+                          className="bg-purple-400 rounded-t-sm flex-1"
+                          style={{ height: `${((data.value + 15000) / maxValue) * 180}px` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-2">{data.month}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Purchase Analytics */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Purchase Analytics</h3>
+                <div className="flex gap-2">
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-amber-400 rounded-full"></span>
+                    <span className="text-xs text-gray-600">Sold</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-cyan-400 rounded-full"></span>
+                    <span className="text-xs text-gray-600">Purchased</span>
+                  </span>
+                </div>
+              </div>
+              <div className="h-24 flex items-center justify-center text-gray-400">
+                <p>100k baseline</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column */}
+          <div className="col-span-3 space-y-6">
+            {/* Sale Analytics - Donut Chart */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Sale Analytics</h3>
+              </div>
+
+              {/* Donut Chart */}
+              <div className="flex justify-center mb-6">
+                <div className="relative w-40 h-40">
+                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                    {/* Cyan segment (70% - Returned) */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="30"
+                      fill="none"
+                      stroke="#06b6d4"
+                      strokeWidth="20"
+                      strokeDasharray="131.95 188.5"
+                      strokeLinecap="round"
+                    />
+                    {/* Orange segment (20% - Completed) */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="30"
+                      fill="none"
+                      stroke="#f59e0b"
+                      strokeWidth="20"
+                      strokeDasharray="56.55 188.5"
+                      strokeDashoffset="-131.95"
+                      strokeLinecap="round"
+                    />
+                    {/* Purple segment (10% - Distributed) */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="30"
+                      fill="none"
+                      stroke="#a855f7"
+                      strokeWidth="20"
+                      strokeDasharray="28.275 188.5"
+                      strokeDashoffset="-188.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+
+                  {/* Center Text */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <p className="text-2xl font-bold text-gray-900">100%</p>
+                    <p className="text-xs text-gray-600">Completed</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">20% Completed</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">70% Returned</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">10% Distributed</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Products */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Top Products</h3>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2 pb-3 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-700">Product</p>
+                  <p className="text-sm font-medium text-gray-700 text-right">Code</p>
+                </div>
+                {topProducts.map((product, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{product.avatar}</span>
+                      <span className="text-sm font-medium text-gray-900">{product.name}</span>
+                    </div>
+                    <span className="text-sm text-gray-500">{product.code}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
