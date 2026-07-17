@@ -1,154 +1,134 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import PageLayout from "../components/PageLayout";
 
 interface Employee {
-  id: string; name: string; designation: string | null;
-  daily_wage: number; phone: string | null; joined_date: string | null; is_active: boolean;
+  id: string;
+  name: string;
+  designation: string;
+  department: string;
+  email: string;
+  phone: string;
+  joining_date: string;
+  status: "active" | "inactive";
 }
 
-const empty = { name: "", designation: "", daily_wage: 0, phone: "", joined_date: "" };
-
 export default function Employees() {
-  const qc = useQueryClient();
-  const [editing, setEditing] = useState<Employee | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<typeof empty>(empty);
-
-  const { data: employees = [], isLoading } = useQuery({
-    queryKey: ["employees"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("employees").select("*").order("name");
-      if (error) throw error;
-      return data as Employee[];
+  const [employees] = useState<Employee[]>([
+    {
+      id: "EMP-001",
+      name: "Rajesh Kumar",
+      designation: "Production Manager",
+      department: "Production",
+      email: "rajesh@company.com",
+      phone: "98765-43210",
+      joining_date: "10 Jan 2022",
+      status: "active",
     },
-  });
-
-  const save = useMutation({
-    mutationFn: async () => {
-      const payload = { ...form, joined_date: form.joined_date || null };
-      if (editing) {
-        const { error } = await supabase.from("employees").update(payload).eq("id", editing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("employees").insert(payload);
-        if (error) throw error;
-      }
+    {
+      id: "EMP-002",
+      name: "Priya Sharma",
+      designation: "Quality Inspector",
+      department: "Quality",
+      email: "priya@company.com",
+      phone: "98765-43211",
+      joining_date: "15 Mar 2022",
+      status: "active",
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["employees"] }); close(); },
-  });
-
-  const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("employees").delete().eq("id", id);
-      if (error) throw error;
+    {
+      id: "EMP-003",
+      name: "Amit Patel",
+      designation: "Warehouse Supervisor",
+      department: "Warehouse",
+      email: "amit@company.com",
+      phone: "98765-43212",
+      joining_date: "20 Jun 2022",
+      status: "active",
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["employees"] }),
-  });
+  ]);
 
-  const openEdit = (e: Employee) => {
-    setEditing(e);
-    setForm({
-      name: e.name, designation: e.designation ?? "", daily_wage: e.daily_wage,
-      phone: e.phone ?? "", joined_date: e.joined_date ?? "",
-    });
-    setShowForm(true);
-  };
-  const close = () => { setShowForm(false); setEditing(null); setForm(empty); };
+  const [showModal, setShowModal] = useState(false);
 
   return (
-    <div>
-      <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Employees</h1>
-        <button className="btn flex items-center gap-1.5"
-          onClick={() => { setEditing(null); setForm(empty); setShowForm(true); }}>
-          <Plus size={14} /> New Employee
+    <PageLayout
+      title="Employees"
+      subtitle="Manage employee records and details"
+      headerAction={
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium shadow-lg"
+        >
+          + Add Employee
         </button>
-      </div>
-
-      <div className="card overflow-hidden">
-        <table className="w-full text-[13px]">
-          <thead>
-            <tr className="border-b border-white/[.06] text-left text-[11px] uppercase tracking-wide text-[#B9BAC5]">
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Designation</th>
-              <th className="px-4 py-3">Daily wage</th>
-              <th className="px-4 py-3">Phone</th>
-              <th className="px-4 py-3 w-[90px]"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading && <tr><td className="px-4 py-6 text-[#B9BAC5]" colSpan={5}>Loading...</td></tr>}
-            {!isLoading && employees.length === 0 && (
-              <tr><td className="px-4 py-6 text-[#B9BAC5]" colSpan={5}>No employees yet.</td></tr>
-            )}
-            {employees.map((e) => (
-              <tr key={e.id} className="border-b border-white/[.04] hover:bg-white/[.02]">
-                <td className="px-4 py-3 font-medium">{e.name}</td>
-                <td className="px-4 py-3 text-[#B9BAC5]">{e.designation || "—"}</td>
-                <td className="px-4 py-3">₹{Number(e.daily_wage).toLocaleString("en-IN")}</td>
-                <td className="px-4 py-3 text-[#B9BAC5]">{e.phone || "—"}</td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <button className="text-[#B9BAC5] hover:text-white" onClick={() => openEdit(e)}>
-                      <Pencil size={14} />
-                    </button>
-                    <button className="text-[#B9BAC5] hover:text-red-400"
-                      onClick={() => { if (confirm(`Remove ${e.name}?`)) remove.mutate(e.id); }}>
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </td>
+      }
+    >
+      {/* Employees Table */}
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead style={{ background: "#1a1a1a" }}>
+              <tr>
+                <th className="text-left py-4 px-6 text-white font-semibold text-sm">EMPLOYEE ID</th>
+                <th className="text-left py-4 px-6 text-white font-semibold text-sm">NAME</th>
+                <th className="text-left py-4 px-6 text-white font-semibold text-sm">DESIGNATION</th>
+                <th className="text-left py-4 px-6 text-white font-semibold text-sm">DEPARTMENT</th>
+                <th className="text-left py-4 px-6 text-white font-semibold text-sm">EMAIL</th>
+                <th className="text-left py-4 px-6 text-white font-semibold text-sm">PHONE</th>
+                <th className="text-left py-4 px-6 text-white font-semibold text-sm">JOINING DATE</th>
+                <th className="text-left py-4 px-6 text-white font-semibold text-sm">STATUS</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {employees.map((employee) => (
+                <tr key={employee.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-4 px-6 font-semibold text-gray-900">{employee.id}</td>
+                  <td className="py-4 px-6 text-gray-700">{employee.name}</td>
+                  <td className="py-4 px-6 text-gray-700">{employee.designation}</td>
+                  <td className="py-4 px-6 text-gray-700">{employee.department}</td>
+                  <td className="py-4 px-6 text-gray-600">{employee.email}</td>
+                  <td className="py-4 px-6 text-gray-600">{employee.phone}</td>
+                  <td className="py-4 px-6 text-gray-600">{employee.joining_date}</td>
+                  <td className="py-4 px-6">
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                      {employee.status.charAt(0).toUpperCase() + employee.status.slice(1)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={close}>
-          <div className="h-full w-[400px] overflow-y-auto border-l border-white/[.08] bg-[#0b0c14] p-6"
-            onClick={(ev) => ev.stopPropagation()}>
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-base font-semibold">{editing ? "Edit Employee" : "New Employee"}</h2>
-              <button className="text-[#B9BAC5] hover:text-white" onClick={close}><X size={16} /></button>
+      {/* Add Employee Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-xl">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Add Employee</h2>
+            <div className="space-y-4">
+              <input type="text" placeholder="Full Name" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500" />
+              <input type="text" placeholder="Designation" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500" />
+              <select className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500">
+                <option value="">Select Department</option>
+                <option value="Production">Production</option>
+                <option value="Quality">Quality</option>
+                <option value="Warehouse">Warehouse</option>
+                <option value="Admin">Admin</option>
+              </select>
+              <input type="email" placeholder="Email" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500" />
+              <input type="tel" placeholder="Phone" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500" />
+              <input type="date" placeholder="Joining Date" className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500" />
             </div>
-            <div className="space-y-3">
-              <div>
-                <label className="mb-1 block text-[11px] text-[#B9BAC5]">Name *</label>
-                <input className="input" value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] text-[#B9BAC5]">Designation</label>
-                <input className="input" value={form.designation}
-                  onChange={(e) => setForm({ ...form, designation: e.target.value })} />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] text-[#B9BAC5]">Daily wage (₹) *</label>
-                <input type="number" className="input" value={form.daily_wage}
-                  onChange={(e) => setForm({ ...form, daily_wage: +e.target.value })} />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] text-[#B9BAC5]">Phone</label>
-                <input className="input" value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] text-[#B9BAC5]">Joined date</label>
-                <input type="date" className="input" value={form.joined_date}
-                  onChange={(e) => setForm({ ...form, joined_date: e.target.value })} />
-              </div>
-              {save.isError && <p className="text-xs text-red-400">{(save.error as Error).message}</p>}
-              <button className="btn w-full" disabled={!form.name || save.isPending}
-                onClick={() => save.mutate()}>
-                {save.isPending ? "Saving..." : editing ? "Save changes" : "Add employee"}
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setShowModal(false)} className="flex-1 border border-gray-300 rounded-lg py-2 font-medium text-gray-700 hover:bg-gray-50">
+                Cancel
+              </button>
+              <button onClick={() => setShowModal(false)} className="flex-1 bg-blue-600 text-white rounded-lg py-2 font-medium hover:bg-blue-700">
+                Add Employee
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 }
