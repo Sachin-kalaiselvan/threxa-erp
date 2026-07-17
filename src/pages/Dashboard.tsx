@@ -1,7 +1,5 @@
 import React, { useState } from "react";
-import { BarChart3, Factory, Package, TrendingUp, LogOut, Settings, Bell } from "lucide-react";
-import threxaIcon from "../assets/threxa-icon.png";
-import threxaWordmark from "../assets/threxa-wordmark.png";
+import { BarChart3, Factory, Package, TrendingUp } from "lucide-react";
 
 // ==================== CHART COMPONENTS ====================
 
@@ -629,33 +627,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Premium Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo & Wordmark - actual brand assets, nothing else */}
-            <div className="flex items-center gap-2.5">
-              <img src={threxaIcon} alt="Threxa" className="h-9 w-9 object-contain" />
-              <img src={threxaWordmark} alt="Threxa" className="h-6 object-contain" />
-            </div>
-
-            {/* Right Actions */}
-            <div className="flex items-center gap-4">
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition">
-                <Bell size={20} className="text-gray-600" />
-              </button>
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition">
-                <Settings size={20} className="text-gray-600" />
-              </button>
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition">
-                <LogOut size={20} className="text-gray-600" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Tab Navigation */}
+      {/* Tab Navigation - Layout.tsx already provides the header/logo, this page only owns its tabs */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex gap-3 overflow-x-auto">
