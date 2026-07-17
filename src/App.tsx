@@ -6,6 +6,7 @@ import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import Layout from "./components/Layout";
 
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import Orders from "./pages/Orders";
 import Production from "./pages/Production";
@@ -99,7 +100,8 @@ export default function App() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Customers />} />
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/customers" element={<Customers />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/production" element={<Production />} />
