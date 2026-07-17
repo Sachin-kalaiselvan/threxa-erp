@@ -1,37 +1,8 @@
 import React, { useState } from "react";
 import { BarChart3, Factory, Package, TrendingUp } from "lucide-react";
 
-// KPI Card Component
-function KPICard({
-  title,
-  value,
-  change,
-  bgColor = "bg-blue-50",
-}: {
-  title: string;
-  value: string | number;
-  change: number;
-  bgColor?: string;
-}) {
-  return (
-    <div className={`${bgColor} rounded-lg p-6 border border-gray-200`}>
-      <p className="text-sm text-gray-600 font-medium">{title}</p>
-      <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
-      <div className="flex items-center gap-1 mt-2">
-        <span
-          className={`text-sm font-medium ${
-            change >= 0 ? "text-green-600" : "text-red-600"
-          }`}
-        >
-          {change >= 0 ? "+" : ""}{change}%
-        </span>
-        <span className="text-sm text-gray-500">vs Yesterday</span>
-      </div>
-    </div>
-  );
-}
+// ==================== CHART COMPONENTS ====================
 
-// Simple Line Chart
 function LineChart({
   title,
   data,
@@ -41,51 +12,85 @@ function LineChart({
 }) {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white rounded-lg p-6 border border-gray-200">
-        <p className="text-gray-600">{title}</p>
+      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+        <p className="text-gray-600 font-semibold">{title}</p>
         <p className="text-gray-400 text-sm mt-4">No data available</p>
       </div>
     );
   }
 
   const maxValue = Math.max(...data.map((d) => d.value));
+  const minValue = Math.min(...data.map((d) => d.value));
+  const range = maxValue - minValue || 1;
 
   return (
-    <div className="bg-white rounded-lg p-6 border border-gray-200">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
-      <svg viewBox="0 0 800 300" className="w-full h-64">
-        <line x1="60" y1="260" x2="780" y2="260" stroke="#d1d5db" strokeWidth="2" />
-        <line x1="60" y1="60" x2="60" y2="260" stroke="#d1d5db" strokeWidth="2" />
+    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+      <h3 className="text-sm font-semibold text-gray-900 mb-6">{title}</h3>
+      <svg viewBox="0 0 600 200" className="w-full">
+        {/* Grid */}
+        {[0, 1, 2, 3, 4].map((i) => (
+          <line
+            key={`grid-${i}`}
+            x1="40"
+            y1={40 + (i * 120) / 4}
+            x2="580"
+            y2={40 + (i * 120) / 4}
+            stroke="#f3f4f6"
+            strokeWidth="1"
+          />
+        ))}
 
+        {/* Axes */}
+        <line x1="40" y1="160" x2="580" y2="160" stroke="#d1d5db" strokeWidth="1.5" />
+        <line x1="40" y1="40" x2="40" y2="160" stroke="#d1d5db" strokeWidth="1.5" />
+
+        {/* Line path */}
         <polyline
           points={data
             .map((point, idx) => {
-              const x = 60 + (idx * 720) / (data.length - 1 || 1);
-              const y = 260 - ((point.value / maxValue) * 200);
+              const x = 40 + (idx * 540) / (data.length - 1 || 1);
+              const y = 160 - ((point.value - minValue) / range) * 120;
               return `${x},${y}`;
             })
             .join(" ")}
           fill="none"
           stroke="#3b82f6"
-          strokeWidth="2"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
 
+        {/* Points */}
         {data.map((point, idx) => {
-          const x = 60 + (idx * 720) / (data.length - 1 || 1);
-          const y = 260 - ((point.value / maxValue) * 200);
+          const x = 40 + (idx * 540) / (data.length - 1 || 1);
+          const y = 160 - ((point.value - minValue) / range) * 120;
           return (
-            <g key={`point-${idx}`}>
-              <circle cx={x} cy={y} r="4" fill="#3b82f6" />
-              <text
-                x={x}
-                y="285"
-                textAnchor="middle"
-                fontSize="12"
-                fill="#6b7280"
-              >
-                {point.label}
-              </text>
-            </g>
+            <circle
+              key={`point-${idx}`}
+              cx={x}
+              cy={y}
+              r="3"
+              fill="#3b82f6"
+              stroke="#fff"
+              strokeWidth="1"
+            />
+          );
+        })}
+
+        {/* Labels */}
+        {data.map((point, idx) => {
+          const x = 40 + (idx * 540) / (data.length - 1 || 1);
+          return (
+            <text
+              key={`label-${idx}`}
+              x={x}
+              y="180"
+              textAnchor="middle"
+              fontSize="12"
+              fill="#9ca3af"
+            >
+              {point.label}
+            </text>
           );
         })}
       </svg>
@@ -93,7 +98,6 @@ function LineChart({
   );
 }
 
-// Simple Bar Chart
 function BarChart({
   title,
   data,
@@ -103,8 +107,8 @@ function BarChart({
 }) {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white rounded-lg p-6 border border-gray-200">
-        <p className="text-gray-600">{title}</p>
+      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+        <p className="text-gray-600 font-semibold">{title}</p>
       </div>
     );
   }
@@ -112,17 +116,32 @@ function BarChart({
   const maxValue = Math.max(...data.map((d) => d.value));
 
   return (
-    <div className="bg-white rounded-lg p-6 border border-gray-200">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
-      <svg viewBox="0 0 800 300" className="w-full h-64">
-        <line x1="60" y1="260" x2="780" y2="260" stroke="#d1d5db" strokeWidth="2" />
-        <line x1="60" y1="60" x2="60" y2="260" stroke="#d1d5db" strokeWidth="2" />
+    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+      <h3 className="text-sm font-semibold text-gray-900 mb-6">{title}</h3>
+      <svg viewBox="0 0 600 200" className="w-full">
+        {/* Grid */}
+        {[0, 1, 2, 3, 4].map((i) => (
+          <line
+            key={`grid-${i}`}
+            x1="40"
+            y1={40 + (i * 120) / 4}
+            x2="580"
+            y2={40 + (i * 120) / 4}
+            stroke="#f3f4f6"
+            strokeWidth="1"
+          />
+        ))}
 
+        {/* Axes */}
+        <line x1="40" y1="160" x2="580" y2="160" stroke="#d1d5db" strokeWidth="1.5" />
+        <line x1="40" y1="40" x2="40" y2="160" stroke="#d1d5db" strokeWidth="1.5" />
+
+        {/* Bars */}
         {data.map((bar, idx) => {
-          const barWidth = 700 / data.length;
-          const barX = 70 + idx * barWidth;
-          const barHeight = (bar.value / maxValue) * 200;
-          const barY = 260 - barHeight;
+          const barWidth = 520 / data.length;
+          const barX = 50 + idx * barWidth;
+          const barHeight = (bar.value / maxValue) * 120;
+          const barY = 160 - barHeight;
           const color = bar.color || "#3b82f6";
 
           return (
@@ -130,17 +149,18 @@ function BarChart({
               <rect
                 x={barX}
                 y={barY}
-                width={barWidth - 10}
+                width={barWidth - 16}
                 height={barHeight}
                 fill={color}
-                rx="4"
+                rx="6"
+                opacity="0.9"
               />
               <text
-                x={barX + (barWidth - 10) / 2}
-                y="285"
+                x={barX + (barWidth - 16) / 2}
+                y="180"
                 textAnchor="middle"
                 fontSize="12"
-                fill="#6b7280"
+                fill="#9ca3af"
               >
                 {bar.label}
               </text>
@@ -152,7 +172,6 @@ function BarChart({
   );
 }
 
-// Donut Chart
 function DonutChart({
   title,
   data,
@@ -161,18 +180,21 @@ function DonutChart({
   data: Array<{ label: string; value: number; color: string }>;
 }) {
   if (!data || data.length === 0) {
-    return <div className="bg-white rounded-lg p-6 border border-gray-200 h-80 flex items-center justify-center"><p className="text-gray-400">No data</p></div>;
+    return (
+      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm h-80 flex items-center justify-center">
+        <p className="text-gray-400">No data</p>
+      </div>
+    );
   }
 
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className="bg-white rounded-lg p-6 border border-gray-200">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+      <h3 className="text-sm font-semibold text-gray-900 mb-6">{title}</h3>
       <div className="flex items-center justify-between">
-        <svg viewBox="0 0 200 200" className="w-48 h-48">
+        <svg viewBox="0 0 160 160" className="w-32 h-32">
           {data.map((item, idx) => {
-            const total = data.reduce((sum, d) => sum + d.value, 0);
             let currentAngle = data
               .slice(0, idx)
               .reduce((sum, d) => sum + (d.value / total) * 360, 0);
@@ -180,13 +202,13 @@ function DonutChart({
             const startRad = (currentAngle * Math.PI) / 180;
             const endRad = ((currentAngle + sliceAngle) * Math.PI) / 180;
 
-            const x1 = 100 + 80 * Math.cos(startRad);
-            const y1 = 100 + 80 * Math.sin(startRad);
-            const x2 = 100 + 80 * Math.cos(endRad);
-            const y2 = 100 + 80 * Math.sin(endRad);
+            const x1 = 80 + 55 * Math.cos(startRad);
+            const y1 = 80 + 55 * Math.sin(startRad);
+            const x2 = 80 + 55 * Math.cos(endRad);
+            const y2 = 80 + 55 * Math.sin(endRad);
 
             const largeArc = sliceAngle > 180 ? 1 : 0;
-            const path = `M 100 100 L ${x1} ${y1} A 80 80 0 ${largeArc} 1 ${x2} ${y2} Z`;
+            const path = `M 80 80 L ${x1} ${y1} A 55 55 0 ${largeArc} 1 ${x2} ${y2} Z`;
 
             return (
               <path
@@ -198,12 +220,12 @@ function DonutChart({
               />
             );
           })}
-          <circle cx="100" cy="100" r="40" fill="white" />
+          <circle cx="80" cy="80" r="30" fill="white" />
           <text
-            x="100"
-            y="105"
+            x="80"
+            y="85"
             textAnchor="middle"
-            fontSize="20"
+            fontSize="16"
             fontWeight="bold"
             fill="#1f2937"
           >
@@ -211,16 +233,16 @@ function DonutChart({
           </text>
         </svg>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           {data.map((item, idx) => (
-            <div key={`legend-${idx}`} className="flex items-center gap-2">
+            <div key={`legend-${idx}`} className="flex items-center gap-3">
               <div
-                className="w-3 h-3 rounded-full"
+                className="w-2.5 h-2.5 rounded-full"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="text-sm text-gray-700">{item.label}</span>
-              <span className="text-sm font-medium text-gray-900">
-                {((item.value / total) * 100).toFixed(1)}%
+              <span className="text-xs text-gray-600">{item.label}</span>
+              <span className="text-xs font-semibold text-gray-900 ml-auto">
+                {((item.value / total) * 100).toFixed(0)}%
               </span>
             </div>
           ))}
@@ -230,7 +252,6 @@ function DonutChart({
   );
 }
 
-// Gantt Chart
 function GanttChart({
   title,
   tasks,
@@ -239,22 +260,21 @@ function GanttChart({
   tasks: Array<{ id: string; name: string; start: number; duration: number; color?: string }>;
 }) {
   return (
-    <div className="bg-white rounded-lg p-6 border border-gray-200">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+      <h3 className="text-sm font-semibold text-gray-900 mb-6">{title}</h3>
       <div className="space-y-4">
         {tasks.map((task) => (
           <div key={task.id} className="flex items-center gap-4">
-            <div className="w-32 text-sm text-gray-700 font-medium truncate">
+            <div className="w-40 text-xs text-gray-700 font-medium truncate">
               {task.name}
             </div>
-            <div className="flex-1 h-8 bg-gray-100 rounded-lg relative overflow-hidden">
+            <div className="flex-1 h-6 bg-gray-100 rounded-full relative overflow-hidden">
               <div
-                className="h-full rounded-lg"
+                className="h-full rounded-full shadow-sm"
                 style={{
                   marginLeft: `${task.start}%`,
                   width: `${task.duration}%`,
                   backgroundColor: task.color || "#3b82f6",
-                  opacity: 0.8,
                 }}
               />
             </div>
@@ -265,7 +285,6 @@ function GanttChart({
   );
 }
 
-// Table
 function DataTable({
   title,
   columns,
@@ -276,24 +295,27 @@ function DataTable({
   rows: Array<Record<string, any>>;
 }) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div className="p-6 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="p-6 border-b border-gray-100">
+        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-[#1a1a1a] text-white">
-            <tr>
+          <thead>
+            <tr className="border-b border-gray-100 bg-gray-50">
               {columns.map((col) => (
-                <th key={col.key} className="px-6 py-3 text-sm font-semibold text-left">
+                <th
+                  key={col.key}
+                  className="px-6 py-3 text-xs font-semibold text-gray-700 text-left"
+                >
                   {col.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody>
             {rows.map((row, idx) => (
-              <tr key={idx} className="hover:bg-gray-50 transition">
+              <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition">
                 {columns.map((col) => (
                   <td key={`${idx}-${col.key}`} className="px-6 py-4 text-sm text-gray-700">
                     {row[col.key]}
@@ -308,135 +330,102 @@ function DataTable({
   );
 }
 
-// Heatmap
-function Heatmap({
+// ==================== KPI CARD ====================
+
+function KPICard({
   title,
-  rows,
+  value,
+  change,
+  bgColor = "bg-blue-50",
 }: {
   title: string;
-  rows: Array<{
-    name: string;
-    cells: Array<{ label: string; value: number; max: number }>;
-  }>;
+  value: string | number;
+  change: number;
+  bgColor?: string;
 }) {
-  const getColor = (value: number, max: number) => {
-    const percentage = (value / max) * 100;
-    if (percentage < 20) return "#fecaca";
-    if (percentage < 40) return "#fca5a5";
-    if (percentage < 60) return "#fb923c";
-    if (percentage < 80) return "#84cc16";
-    return "#22c55e";
-  };
-
   return (
-    <div className="bg-white rounded-lg p-6 border border-gray-200">
-      <h3 className="text-lg font-semibold text-gray-900 mb-6">{title}</h3>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <tbody>
-            {rows.map((row, idx) => (
-              <tr key={idx}>
-                <td className="pr-4 py-2 text-sm font-medium text-gray-700 w-32">
-                  {row.name}
-                </td>
-                <td>
-                  <div className="flex gap-2">
-                    {row.cells.map((cell, cellIdx) => {
-                      const color = getColor(cell.value, cell.max);
-                      return (
-                        <div key={cellIdx} className="flex flex-col items-center">
-                          <div
-                            className="w-10 h-10 rounded border border-gray-300 flex items-center justify-center text-xs font-medium text-gray-700"
-                            style={{ backgroundColor: color }}
-                            title={`${cell.label}: ${cell.value}/${cell.max}`}
-                          >
-                            {cell.value}
-                          </div>
-                          <span className="text-xs text-gray-500 mt-1">
-                            {cell.label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className={`${bgColor} rounded-xl p-5 border border-gray-100 shadow-sm`}>
+      <p className="text-xs text-gray-600 font-medium uppercase tracking-wide">{title}</p>
+      <p className="text-2xl font-bold text-gray-900 mt-3">{value}</p>
+      <div className="flex items-center gap-1.5 mt-3">
+        <span
+          className={`text-xs font-semibold ${
+            change >= 0 ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {change >= 0 ? "↑" : "↓"} {Math.abs(change)}%
+        </span>
+        <span className="text-xs text-gray-500">vs Yesterday</span>
       </div>
     </div>
   );
 }
 
-// Main Dashboard
+// ==================== MAIN DASHBOARD ====================
+
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<
-    "owner" | "production" | "inventory" | "analytics"
-  >("owner");
+    "command" | "production" | "inventory" | "analytics"
+  >("command");
 
   const tabs = [
-    { id: "owner", label: "Owner Command Center", icon: BarChart3 },
+    { id: "command", label: "Command Centre", icon: BarChart3 },
     { id: "production", label: "Production Control Room", icon: Factory },
     { id: "inventory", label: "Inventory & Procurement", icon: Package },
     { id: "analytics", label: "Business Analytics", icon: TrendingUp },
   ];
 
-  // ==================== OWNER TAB ====================
-  const ownerContent = (
+  // ==================== COMMAND CENTRE TAB ====================
+  const commandContent = (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* KPIs */}
+      {/* Top KPI Row */}
       <div className="grid grid-cols-5 gap-4">
         <KPICard
           title="Today's Revenue"
           value="₹8,74,500"
           change={10.5}
-          bgColor="bg-yellow-50"
+          bgColor="bg-emerald-50"
         />
-        <KPICard title="Total Orders" value="24" change={9.08} bgColor="bg-purple-50" />
+        <KPICard title="Total Orders" value="24" change={9.08} bgColor="bg-blue-50" />
         <KPICard
           title="Production Status"
           value="18"
           change={0}
-          bgColor="bg-orange-50"
+          bgColor="bg-amber-50"
         />
-        <KPICard
-          title="Dispatched Today"
-          value="12"
-          change={5}
-          bgColor="bg-blue-50"
-        />
+        <KPICard title="Dispatched Today" value="12" change={5} bgColor="bg-sky-50" />
         <KPICard
           title="Outstanding Payments"
           value="₹19,63,250"
           change={13.38}
-          bgColor="bg-red-50"
+          bgColor="bg-rose-50"
         />
       </div>
 
-      {/* Charts Row 1 */}
+      {/* Charts Grid */}
       <div className="grid grid-cols-2 gap-6">
         <LineChart
           title="Production Timeline (Live)"
           data={[
-            { label: "Week 1", value: 4500 },
-            { label: "Week 2", value: 5200 },
-            { label: "Week 3", value: 4800 },
-            { label: "Week 4", value: 6100 },
+            { label: "09:00", value: 4500 },
+            { label: "11:00", value: 5200 },
+            { label: "13:00", value: 4800 },
+            { label: "15:00", value: 6100 },
+            { label: "17:00", value: 5900 },
           ]}
         />
         <BarChart
           title="Today's Dispatch Schedule"
           data={[
             { label: "09:00", value: 2, color: "#3b82f6" },
-            { label: "11:30", value: 3, color: "#3b82f6" },
+            { label: "11:30", value: 3, color: "#06b6d4" },
             { label: "14:00", value: 4, color: "#f59e0b" },
             { label: "17:00", value: 3, color: "#ef4444" },
           ]}
         />
       </div>
 
-      {/* Charts Row 2 */}
+      {/* Revenue & Order Status */}
       <div className="grid grid-cols-2 gap-6">
         <LineChart
           title="Revenue vs Target (This Month)"
@@ -458,18 +447,32 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Table */}
+      {/* Gantt Timeline */}
+      <GanttChart
+        title="Production Timeline (Live)"
+        tasks={[
+          { id: "1", name: "Corrugation Line 1", start: 0, duration: 85, color: "#10b981" },
+          { id: "2", name: "Die Cut Machine 1", start: 5, duration: 75, color: "#3b82f6" },
+          { id: "3", name: "Printing Machine", start: 15, duration: 60, color: "#f59e0b" },
+          { id: "4", name: "Stitching Machine", start: 25, duration: 50, color: "#ef4444" },
+        ]}
+      />
+
+      {/* Top Customers Table */}
       <DataTable
         title="Top Customers (This Month)"
         columns={[
           { key: "customer", label: "Customer" },
           { key: "orders", label: "Orders" },
           { key: "revenue", label: "Revenue" },
+          { key: "status", label: "Status" },
         ]}
         rows={[
-          { customer: "Rajesh Enterprises", orders: 8, revenue: "₹2,40,000" },
-          { customer: "Priya Packaging", orders: 6, revenue: "₹1,80,000" },
-          { customer: "Kumar Industries", orders: 4, revenue: "₹1,20,000" },
+          { customer: "Rajesh Enterprises", orders: 8, revenue: "₹2,40,000", status: "Active" },
+          { customer: "Priya Packaging", orders: 6, revenue: "₹1,80,000", status: "Active" },
+          { customer: "Kumar Industries", orders: 4, revenue: "₹1,20,000", status: "Pending" },
+          { customer: "Global Foods", orders: 5, revenue: "₹1,50,000", status: "Active" },
+          { customer: "FastMart Ltd", orders: 3, revenue: "₹90,000", status: "Active" },
         ]}
       />
     </div>
@@ -481,7 +484,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-5 gap-4">
         <KPICard title="Machines Running" value="5 / 8" change={0} bgColor="bg-blue-50" />
         <KPICard title="Work Orders" value="18" change={5} bgColor="bg-purple-50" />
-        <KPICard title="Capacity Utilization" value="73%" change={3} bgColor="bg-green-50" />
+        <KPICard title="Capacity Util." value="73%" change={3} bgColor="bg-green-50" />
         <KPICard title="Today's Output" value="24,560" change={8} bgColor="bg-yellow-50" />
         <KPICard title="Rejection Rate" value="2.35%" change={-0.5} bgColor="bg-red-50" />
       </div>
@@ -513,8 +516,8 @@ export default function Dashboard() {
         <BarChart
           title="Machine Load"
           data={[
-            { label: "Corrugation Line 1", value: 95, color: "#10b981" },
-            { label: "Die Cut Machine 1", value: 78, color: "#3b82f6" },
+            { label: "Corrugation L1", value: 95, color: "#10b981" },
+            { label: "Die Cut M1", value: 78, color: "#3b82f6" },
             { label: "Printing", value: 65, color: "#f59e0b" },
             { label: "Stitching", value: 52, color: "#ef4444" },
           ]}
@@ -527,64 +530,34 @@ export default function Dashboard() {
   const inventoryContent = (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="grid grid-cols-5 gap-4">
-        <KPICard title="Total Raw Materials" value="45,620" change={5} bgColor="bg-blue-50" />
-        <KPICard title="Paper Used (This Month)" value="32 Kg" change={8} bgColor="bg-yellow-50" />
-        <KPICard title="SKU Boards in Stock" value="26,500" change={2} bgColor="bg-green-50" />
-        <KPICard title="Supplier Credit (30 Days)" value="₹12,75,300" change={-5} bgColor="bg-purple-50" />
+        <KPICard title="Raw Materials" value="45,620" change={5} bgColor="bg-blue-50" />
+        <KPICard title="Paper Used" value="32 Kg" change={8} bgColor="bg-yellow-50" />
+        <KPICard title="SKU Boards" value="26,500" change={2} bgColor="bg-green-50" />
+        <KPICard title="Supplier Credit" value="₹12.75L" change={-5} bgColor="bg-purple-50" />
         <KPICard title="POs in Transit" value="6" change={1} bgColor="bg-cyan-50" />
       </div>
 
-      <Heatmap
-        title="Inventory Headmap (Raw Stock)"
-        rows={[
-          {
-            name: "Text Liner",
-            cells: [
-              { label: "1 Ply", value: 140, max: 1000 },
-              { label: "2 Ply", value: 32, max: 1000 },
-              { label: "3 Ply", value: 3.1, max: 100 },
-            ],
-          },
-          {
-            name: "Corrugating Medium",
-            cells: [
-              { label: "1 Ply", value: 120, max: 1000 },
-              { label: "2 Ply", value: 28, max: 1000 },
-              { label: "3 Ply", value: 2.8, max: 100 },
-            ],
-          },
-          {
-            name: "Kraft Paper",
-            cells: [
-              { label: "1 Ply", value: 155, max: 1000 },
-              { label: "2 Ply", value: 45, max: 1000 },
-              { label: "3 Ply", value: 4.2, max: 100 },
-            ],
-          },
-        ]}
-      />
-
       <div className="grid grid-cols-2 gap-6">
         <BarChart
-          title="Supplier Payments Due (Next 30 Days)"
+          title="Supplier Payments Due (30 Days)"
           data={[
-            { label: "Shrivee Paper Mills", value: 250, color: "#3b82f6" },
-            { label: "Baba Paper Co.", value: 180, color: "#f59e0b" },
+            { label: "Shrivee Mills", value: 250, color: "#3b82f6" },
+            { label: "Baba Paper Co", value: 180, color: "#f59e0b" },
             { label: "Gulf Packaging", value: 165, color: "#10b981" },
-            { label: "Kumar Suppliers", value: 120, color: "#ef4444" },
+            { label: "Kumar Supp", value: 120, color: "#ef4444" },
           ]}
         />
         <DataTable
           title="Low Stock Alerts"
           columns={[
             { key: "item", label: "Item" },
-            { key: "qty", label: "Current Qty" },
+            { key: "qty", label: "Qty" },
             { key: "alert", label: "Alert" },
           ]}
           rows={[
-            { item: "Text Liner", qty: "140 Units", alert: "Critical" },
-            { item: "Corrugating Medium", qty: "120 Units", alert: "Warning" },
-            { item: "Kraft Paper", qty: "155 Units", alert: "Normal" },
+            { item: "Text Liner", qty: "140", alert: "🔴 Critical" },
+            { item: "Corrugating Medium", qty: "120", alert: "🟡 Warning" },
+            { item: "Kraft Paper", qty: "155", alert: "🟢 Normal" },
           ]}
         />
       </div>
@@ -595,11 +568,11 @@ export default function Dashboard() {
   const analyticsContent = (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="grid grid-cols-5 gap-4">
-        <KPICard title="Monthly Revenue" value="₹18,74,500" change={12.45} bgColor="bg-green-50" />
-        <KPICard title="Monthly Profit" value="₹4,25,300" change={8.35} bgColor="bg-blue-50" />
+        <KPICard title="Monthly Revenue" value="₹18.74L" change={12.45} bgColor="bg-green-50" />
+        <KPICard title="Monthly Profit" value="₹4.25L" change={8.35} bgColor="bg-blue-50" />
         <KPICard title="Total Orders" value="64" change={9.88} bgColor="bg-purple-50" />
         <KPICard title="Avg Order Value" value="₹29,289" change={3.15} bgColor="bg-yellow-50" />
-        <KPICard title="Outstanding Receivables" value="₹19,63,250" change={-5.2} bgColor="bg-red-50" />
+        <KPICard title="Receivables" value="₹19.63L" change={-5.2} bgColor="bg-red-50" />
       </div>
 
       <div className="grid grid-cols-2 gap-6">
@@ -619,8 +592,8 @@ export default function Dashboard() {
           data={[
             { label: "5 Ply Boxes", value: 45, color: "#3b82f6" },
             { label: "3 Ply Boxes", value: 35, color: "#f59e0b" },
-            { label: "Custom Packaging", value: 15, color: "#10b981" },
-            { label: "Other Products", value: 5, color: "#ef4444" },
+            { label: "Custom Pkg", value: 15, color: "#10b981" },
+            { label: "Other", value: 5, color: "#ef4444" },
           ]}
         />
       </div>
@@ -629,9 +602,9 @@ export default function Dashboard() {
         <BarChart
           title="Revenue by Product Line"
           data={[
-            { label: "5 Ply Boxes", value: 450000, color: "#3b82f6" },
-            { label: "3 Ply Boxes", value: 350000, color: "#f59e0b" },
-            { label: "Custom Boxes", value: 150000, color: "#10b981" },
+            { label: "5 Ply", value: 450000, color: "#3b82f6" },
+            { label: "3 Ply", value: 350000, color: "#f59e0b" },
+            { label: "Custom", value: 150000, color: "#10b981" },
             { label: "Other", value: 50000, color: "#ef4444" },
           ]}
         />
@@ -655,11 +628,11 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-[#e8e8e8]">
+    <div className="min-h-screen bg-white">
       {/* Tab Navigation */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex gap-4 overflow-x-auto">
+          <div className="flex gap-3 overflow-x-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -668,13 +641,13 @@ export default function Dashboard() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-lg transition whitespace-nowrap font-medium ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition font-medium whitespace-nowrap text-sm ${
                     isActive
-                      ? "bg-blue-600 text-white"
+                      ? "bg-blue-600 text-white shadow-md"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  <Icon size={20} />
+                  <Icon size={18} />
                   {tab.label}
                 </button>
               );
@@ -684,8 +657,8 @@ export default function Dashboard() {
       </div>
 
       {/* Tab Content */}
-      <div className="p-6">
-        {activeTab === "owner" && ownerContent}
+      <div className="p-6 bg-gray-50 min-h-[calc(100vh-70px)]">
+        {activeTab === "command" && commandContent}
         {activeTab === "production" && productionContent}
         {activeTab === "inventory" && inventoryContent}
         {activeTab === "analytics" && analyticsContent}
