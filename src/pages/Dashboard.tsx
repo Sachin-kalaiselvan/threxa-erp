@@ -1,164 +1,285 @@
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { useState } from "react";
+import { TrendingUp } from "lucide-react";
 
-interface Customer {
-  id: string;
-  name: string;
-  contact_person: string | null;
-  phone: string | null;
-}
-
-interface Order {
-  id: string;
-  order_no: string;
-  customer_id: string;
-  status: string;
-  order_date: string;
-}
-
-interface Stats {
-  totalRevenue: number;
-  totalOrders: number;
-  totalCustomers: number;
-  recentOrders: Order[];
-  topCustomers: (Customer & { orderCount: number })[];
+interface KPICard {
+  title: string;
+  value: string | number;
+  change: number;
+  icon: string;
+  bgColor: string;
 }
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [userName] = useState("Josiah");
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [custRes, ordRes] = await Promise.all([
-          supabase.from("customers").select("*"),
-          supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(10),
-        ]);
+  const kpiCards: KPICard[] = [
+    {
+      title: "Total Revenue",
+      value: "$85,500",
+      change: 10.5,
+      icon: "💰",
+      bgColor: "bg-yellow-50",
+    },
+    {
+      title: "Total Orders",
+      value: "1000",
+      change: 10.5,
+      icon: "📦",
+      bgColor: "bg-purple-50",
+    },
+    {
+      title: "Total Customers",
+      value: "300",
+      change: 10.5,
+      icon: "👥",
+      bgColor: "bg-cyan-50",
+    },
+  ];
 
-        const totalRevenue = 845600;
-        const totalOrders = ordRes.data?.length || 0;
-        const totalCustomers = custRes.data?.length || 0;
+  const topProducts = [
+    { name: "Realistic", code: "8812", avatar: "🎨" },
+    { name: "Monstera", code: "8832", avatar: "🌿" },
+    { name: "Product", code: "9871", avatar: "📦" },
+    { name: "Product", code: "2211", avatar: "🎯" },
+  ];
 
-        setStats({
-          totalRevenue,
-          totalOrders,
-          totalCustomers,
-          recentOrders: ordRes.data || [],
-          topCustomers: (custRes.data || []).slice(0, 5).map(c => ({ ...c, orderCount: Math.floor(Math.random() * 10) + 1 })),
-        });
-      } catch (err) {
-        console.error("Failed to fetch stats:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const salesData = [
+    { month: "Jan", value: 25000 },
+    { month: "Feb", value: 32000 },
+    { month: "Mar", value: 38000 },
+    { month: "Apr", value: 42000 },
+    { month: "May", value: 48000 },
+    { month: "Jun", value: 55000 },
+    { month: "Jul", value: 62000 },
+    { month: "Aug", value: 70000 },
+    { month: "Sep", value: 65000 },
+    { month: "Oct", value: 72000 },
+  ];
 
-    fetchStats();
-  }, []);
-
-  if (loading) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
-  }
+  const maxValue = Math.max(...salesData.map((d) => d.value));
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome, Admin 🎉</h1>
-          <p className="text-gray-600 mt-1">Here's what's happening in your Carton Box Manufacturing ERP.</p>
-        </div>
-
-        {/* Top KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Total Revenue */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Total Revenue</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">${(stats?.totalRevenue || 0).toLocaleString()}</p>
-                <p className="text-green-600 text-sm mt-2">📈 18.2% higher vs previous month</p>
-              </div>
-              <div className="text-3xl">💰</div>
-            </div>
+    <div className="min-h-screen p-8" style={{ background: "#e8e8e8" }}>
+      <div className="max-w-full">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900">Welcome, {userName} 🎉</h1>
+            <p className="text-gray-500 mt-1">Here's what's happening in your store.</p>
           </div>
-
-          {/* Total Orders */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Total Orders</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats?.totalOrders || 0}</p>
-                <p className="text-green-600 text-sm mt-2">📈 10.5% from last day</p>
-              </div>
-              <div className="text-3xl">📦</div>
-            </div>
-          </div>
-
-          {/* Total Customers */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Total Customers</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{stats?.totalCustomers || 0}</p>
-                <p className="text-green-600 text-sm mt-2">📈 10.5% from last day</p>
-              </div>
-              <div className="text-3xl">👥</div>
+          <div className="flex gap-3">
+            <button className="bg-white text-gray-600 p-3 rounded-full hover:bg-gray-100 transition-colors border border-gray-200">
+              🔍
+            </button>
+            <button className="bg-white text-gray-600 p-3 rounded-full hover:bg-gray-100 transition-colors border border-gray-200">
+              🌙
+            </button>
+            <div className="relative">
+              <button className="bg-white text-gray-600 p-3 rounded-full hover:bg-gray-100 transition-colors border border-gray-200">
+                🔔
+              </button>
+              <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                2
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Recent Orders */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mb-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Orders</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-gray-200">
-                <tr>
-                  <th className="text-left py-3 px-4 text-gray-600 font-semibold">Order No</th>
-                  <th className="text-left py-3 px-4 text-gray-600 font-semibold">Customer</th>
-                  <th className="text-left py-3 px-4 text-gray-600 font-semibold">Status</th>
-                  <th className="text-left py-3 px-4 text-gray-600 font-semibold">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats?.recentOrders.map((order) => (
-                  <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-gray-900">{order.order_no}</td>
-                    <td className="py-3 px-4 text-gray-600">{order.customer_id}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        order.status === "completed" ? "bg-green-100 text-green-800" :
-                        order.status === "in_production" ? "bg-blue-100 text-blue-800" :
-                        "bg-yellow-100 text-yellow-800"
-                      }`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">{new Date(order.order_date).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Top Customers */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Top Customers</h2>
-          <div className="space-y-3">
-            {stats?.topCustomers.map((customer) => (
-              <div key={customer.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-semibold text-gray-900">{customer.name}</p>
-                  <p className="text-sm text-gray-600">{customer.contact_person}</p>
+        {/* Main Grid Layout */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left Column - KPI Cards */}
+          <div className="col-span-3 space-y-6">
+            {kpiCards.map((card, index) => (
+              <div key={index} className={`${card.bgColor} rounded-2xl p-6 shadow-sm`}>
+                <div className="flex items-start justify-between mb-4">
+                  <span className="text-3xl">{card.icon}</span>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-gray-900">{customer.orderCount} orders</p>
-                  <p className="text-sm text-gray-600">{customer.phone}</p>
+                <p className="text-gray-600 text-sm font-medium">{card.title}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{card.value}</p>
+                <div className="flex items-center gap-1 mt-3">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <span className="text-green-600 font-medium text-sm">{card.change}%</span>
+                  <span className="text-gray-500 text-sm">From Last Day</span>
                 </div>
               </div>
             ))}
+
+            {/* Sales Section */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Sales</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-600">Total Sales</p>
+                  <p className="text-2xl font-bold text-gray-900">9,586</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">This Month</p>
+                  <p className="text-2xl font-bold text-gray-900">9,586</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Today</p>
+                  <p className="text-2xl font-bold text-gray-900">9,586</p>
+                </div>
+                <div className="flex items-center gap-1 pt-2">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <span className="text-green-600 font-medium text-sm">20% increased</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Middle Column - Charts */}
+          <div className="col-span-6 space-y-6">
+            {/* Orders Overview Chart */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Orders Overview</h3>
+                <div className="flex gap-2">
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-amber-400 rounded-full"></span>
+                    <span className="text-xs text-gray-600">Orders</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-purple-400 rounded-full"></span>
+                    <span className="text-xs text-gray-600">Profit</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Mini Chart */}
+              <div className="h-64 flex items-flex-end justify-between gap-2 px-2">
+                {salesData.map((data, idx) => (
+                  <div key={idx} className="flex-1 flex flex-col items-center justify-end">
+                    <div className="relative w-full h-48 flex items-flex-end justify-center">
+                      {/* Dual bars for Orders and Profit */}
+                      <div className="flex gap-1 items-flex-end h-full">
+                        <div
+                          className="bg-amber-400 rounded-t-sm flex-1"
+                          style={{ height: `${(data.value / maxValue) * 180}px` }}
+                        ></div>
+                        <div
+                          className="bg-purple-400 rounded-t-sm flex-1"
+                          style={{ height: `${((data.value + 15000) / maxValue) * 180}px` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-2">{data.month}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Purchase Analytics */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Purchase Analytics</h3>
+                <div className="flex gap-2">
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-amber-400 rounded-full"></span>
+                    <span className="text-xs text-gray-600">Sold</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-cyan-400 rounded-full"></span>
+                    <span className="text-xs text-gray-600">Purchased</span>
+                  </span>
+                </div>
+              </div>
+              <div className="h-24 flex items-center justify-center text-gray-400">
+                <p>100k baseline</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column */}
+          <div className="col-span-3 space-y-6">
+            {/* Sale Analytics - Donut Chart */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Sale Analytics</h3>
+              </div>
+
+              {/* Donut Chart */}
+              <div className="flex justify-center mb-6">
+                <div className="relative w-40 h-40">
+                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                    {/* Cyan segment (70% - Returned) */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="30"
+                      fill="none"
+                      stroke="#06b6d4"
+                      strokeWidth="20"
+                      strokeDasharray="131.95 188.5"
+                      strokeLinecap="round"
+                    />
+                    {/* Orange segment (20% - Completed) */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="30"
+                      fill="none"
+                      stroke="#f59e0b"
+                      strokeWidth="20"
+                      strokeDasharray="56.55 188.5"
+                      strokeDashoffset="-131.95"
+                      strokeLinecap="round"
+                    />
+                    {/* Purple segment (10% - Distributed) */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="30"
+                      fill="none"
+                      stroke="#a855f7"
+                      strokeWidth="20"
+                      strokeDasharray="28.275 188.5"
+                      strokeDashoffset="-188.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+
+                  {/* Center Text */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <p className="text-2xl font-bold text-gray-900">100%</p>
+                    <p className="text-xs text-gray-600">Completed</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">20% Completed</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">70% Returned</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">10% Distributed</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Products */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Top Products</h3>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2 pb-3 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-700">Product</p>
+                  <p className="text-sm font-medium text-gray-700 text-right">Code</p>
+                </div>
+                {topProducts.map((product, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{product.avatar}</span>
+                      <span className="text-sm font-medium text-gray-900">{product.name}</span>
+                    </div>
+                    <span className="text-sm text-gray-500">{product.code}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
