@@ -1,132 +1,103 @@
-// src/components/dashboard/charts/LineChart.tsx
+import React from "react";
+
+interface DataPoint {
+  label: string;
+  value: number;
+}
 
 interface LineChartProps {
   title: string;
-  labels: string[];
-  data: number[];
-  lineColor?: string;
-  areaColor?: string;
+  data: DataPoint[];
   height?: number;
-  showGrid?: boolean;
 }
 
 export default function LineChart({
   title,
-  labels,
   data,
-  lineColor = "#3B82F6",
-  areaColor = "#DBEAFE",
-  height = 250,
-  showGrid = true,
+  height = 300,
 }: LineChartProps) {
-  const padding = 40;
-  const chartHeight = height - 80;
-  const chartWidth = 500;
+  if (!data || data.length === 0) {
+    return (
+      <div
+        className="bg-white rounded-lg p-6 border border-gray-200"
+        style={{ height: `${height}px` }}
+      >
+        <p className="text-gray-600">{title}</p>
+        <p className="text-gray-400 text-sm mt-4">No data available</p>
+      </div>
+    );
+  }
 
-  // Find min/max for scaling
-  const maxValue = Math.max(...data);
-  const minValue = Math.min(...data);
+  const maxValue = Math.max(...data.map((d) => d.value));
+  const minValue = Math.min(...data.map((d) => d.value));
   const range = maxValue - minValue || 1;
 
-  // Calculate points
-  const points = data.map((value, index) => {
-    const x = padding + (index / (data.length - 1)) * (chartWidth - 2 * padding);
-    const y = height - padding - ((value - minValue) / range) * chartHeight;
-    return { x, y, value };
-  });
-
-  // Create path
-  const pathData = points
-    .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
-    .join(" ");
-
-  const areaPathData =
-    `${pathData} L ${points[points.length - 1].x} ${height - padding} L ${padding} ${height - padding} Z`;
-
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900">{title}</h3>
-
-      <svg width="100%" height={height} viewBox={`0 0 ${chartWidth} ${height}`}>
-        {/* Grid */}
-        {showGrid &&
-          Array.from({ length: 5 }).map((_, i) => (
-            <line
-              key={`grid-${i}`}
-              x1={padding}
-              y1={padding + (i * (height - 2 * padding)) / 4}
-              x2={chartWidth - padding}
-              y2={padding + (i * (height - 2 * padding)) / 4}
-              stroke="#E5E7EB"
-              strokeDasharray="4"
-            />
-          ))}
-
-        {/* Area fill */}
-        <path d={areaPathData} fill={areaColor} opacity="0.3" />
-
-        {/* Line */}
-        <path d={pathData} stroke={lineColor} strokeWidth="2" fill="none" />
-
-        {/* Points */}
-        {points.map((p, i) => (
-          <circle
-            key={`point-${i}`}
-            cx={p.x}
-            cy={p.y}
-            r="4"
-            fill={lineColor}
+    <div className="bg-white rounded-lg p-6 border border-gray-200">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+      <svg
+        viewBox="0 0 800 300"
+        className="w-full"
+        style={{ height: `${height}px` }}
+      >
+        {/* Grid lines */}
+        {[0, 1, 2, 3, 4].map((i) => (
+          <line
+            key={`grid-${i}`}
+            x1="60"
+            y1={60 + (i * 200) / 4}
+            x2="780"
+            y2={60 + (i * 200) / 4}
+            stroke="#e5e7eb"
+            strokeWidth="1"
           />
         ))}
 
-        {/* X-axis labels */}
-        {labels.map((label, i) => (
-          <text
-            key={`label-${i}`}
-            x={padding + (i / (labels.length - 1)) * (chartWidth - 2 * padding)}
-            y={height - 10}
-            textAnchor="middle"
-            fontSize="12"
-            fill="#6B7280"
-          >
-            {label}
-          </text>
-        ))}
+        {/* Axes */}
+        <line x1="60" y1="260" x2="780" y2="260" stroke="#d1d5db" strokeWidth="2" />
+        <line x1="60" y1="60" x2="60" y2="260" stroke="#d1d5db" strokeWidth="2" />
 
-        {/* Y-axis labels */}
-        {Array.from({ length: 5 }).map((_, i) => {
-          const value = minValue + (i * range) / 4;
+        {/* Data points and line */}
+        {data.map((point, idx) => {
+          const x = 60 + (idx * 720) / (data.length - 1 || 1);
+          const y = 260 - ((point.value - minValue) / range) * 200;
           return (
-            <text
-              key={`y-label-${i}`}
-              x={padding - 10}
-              y={padding + (i * (height - 2 * padding)) / 4 + 5}
-              textAnchor="end"
-              fontSize="12"
-              fill="#6B7280"
-            >
-              {Math.round(value)}
-            </text>
+            <g key={`point-${idx}`}>
+              <circle cx={x} cy={y} r="4" fill="#3b82f6" />
+            </g>
           );
         })}
 
-        {/* Axes */}
-        <line
-          x1={padding}
-          y1={padding}
-          x2={padding}
-          y2={height - padding}
-          stroke="#9CA3AF"
-          strokeWidth="1"
+        {/* Path line connecting points */}
+        <polyline
+          points={data
+            .map((point, idx) => {
+              const x = 60 + (idx * 720) / (data.length - 1 || 1);
+              const y = 260 - ((point.value - minValue) / range) * 200;
+              return `${x},${y}`;
+            })
+            .join(" ")}
+          fill="none"
+          stroke="#3b82f6"
+          strokeWidth="2"
         />
-        <line
-          x1={padding}
-          y1={height - padding}
-          x2={chartWidth - padding}
-          y2={height - padding}
-          stroke="#9CA3AF"
-          strokeWidth="1"
-        />
+
+        {/* Labels */}
+        {data.map((point, idx) => {
+          const x = 60 + (idx * 720) / (data.length - 1 || 1);
+          return (
+            <text
+              key={`label-${idx}`}
+              x={x}
+              y="285"
+              textAnchor="middle"
+              fontSize="12"
+              fill="#6b7280"
+            >
+              {point.label}
+            </text>
+          );
+        })}
       </svg>
     </div>
   );

@@ -1,72 +1,47 @@
-// src/components/dashboard/cards/KPICard.tsx
+import React from "react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface KPICardProps {
-  label: string;
+  title: string;
   value: string | number;
-  change?: number;
-  changeType?: "positive" | "negative" | "neutral";
+  change: number;
+  icon?: React.ReactNode;
   bgColor?: string;
-  textColor?: string;
-  icon?: string;
 }
 
 export default function KPICard({
-  label,
+  title,
   value,
   change,
-  changeType = "neutral",
-  bgColor = "#F0F4F8",
-  textColor = "#1A202C",
   icon,
+  bgColor = "bg-blue-50",
 }: KPICardProps) {
-  const getChangeColor = () => {
-    if (changeType === "positive") return "#10B981";
-    if (changeType === "negative") return "#EF4444";
-    return "#6B7280";
-  };
+  const isPositive = change >= 0;
 
   return (
-    <div
-      className="rounded-lg p-6 shadow-sm"
-      style={{
-        background: bgColor,
-        border: "1px solid #E5E7EB",
-      }}
-    >
+    <div className={`${bgColor} rounded-lg p-6 border border-gray-200`}>
       <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p
-            className="text-sm font-medium mb-1"
-            style={{ color: "#6B7280" }}
-          >
-            {label}
-          </p>
-          <p
-            className="text-2xl font-bold"
-            style={{ color: textColor }}
-          >
-            {value}
-          </p>
+        <div>
+          <p className="text-sm text-gray-600 font-medium">{title}</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+          <div className="flex items-center gap-1 mt-2">
+            {isPositive ? (
+              <TrendingUp size={16} className="text-green-600" />
+            ) : (
+              <TrendingDown size={16} className="text-red-600" />
+            )}
+            <span
+              className={`text-sm font-medium ${
+                isPositive ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {isPositive ? "+" : ""}{change}%
+            </span>
+            <span className="text-sm text-gray-500">vs Yesterday</span>
+          </div>
         </div>
-        {icon && (
-          <div className="text-3xl">{icon}</div>
-        )}
+        {icon && <div className="text-3xl">{icon}</div>}
       </div>
-
-      {change !== undefined && (
-        <div className="mt-3 flex items-center gap-1">
-          <span
-            className="text-sm font-semibold"
-            style={{ color: getChangeColor() }}
-          >
-            {changeType === "positive" ? "↑" : changeType === "negative" ? "↓" : "→"}
-            {Math.abs(change)}%
-          </span>
-          <span className="text-xs text-gray-500">
-            vs yesterday
-          </span>
-        </div>
-      )}
     </div>
   );
 }

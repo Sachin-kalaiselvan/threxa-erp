@@ -1,178 +1,92 @@
-// src/components/dashboard/charts/BarChart.tsx
+import React from "react";
+
+interface BarData {
+  label: string;
+  value: number;
+  color?: string;
+}
 
 interface BarChartProps {
   title: string;
-  categories: string[];
-  data: Array<{
-    name: string;
-    values: number[];
-    color: string;
-  }>;
+  data: BarData[];
   height?: number;
-  horizontal?: boolean;
 }
 
 export default function BarChart({
   title,
-  categories,
   data,
   height = 300,
-  horizontal = false,
 }: BarChartProps) {
-  const padding = 60;
-  const chartHeight = height - 80;
-  const chartWidth = 500;
-
-  const maxValue = Math.max(
-    ...data.flatMap((series) => series.values)
-  );
-
-  if (horizontal) {
-    // Horizontal bars (for machine load, etc)
+  if (!data || data.length === 0) {
     return (
-      <div className="bg-white rounded-lg p-6 shadow-sm">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">{title}</h3>
-        <div className="space-y-3">
-          {categories.map((category, i) => (
-            <div key={`bar-${i}`}>
-              <p className="text-sm font-medium text-gray-700 mb-1">
-                {category}
-              </p>
-              <div className="flex gap-2">
-                {data.map((series, j) => {
-                  const percentage = (series.values[i] / maxValue) * 100;
-                  return (
-                    <div
-                      key={`bar-segment-${j}`}
-                      className="flex-1 rounded"
-                      style={{
-                        background: series.color,
-                        height: "24px",
-                        opacity: 0.8,
-                      }}
-                      title={`${series.name}: ${series.values[i]}`}
-                    />
-                  );
-                })}
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {((data[0].values[i] / maxValue) * 100).toFixed(0)}%
-              </p>
-            </div>
-          ))}
-        </div>
+      <div
+        className="bg-white rounded-lg p-6 border border-gray-200"
+        style={{ height: `${height}px` }}
+      >
+        <p className="text-gray-600">{title}</p>
+        <p className="text-gray-400 text-sm mt-4">No data available</p>
       </div>
     );
   }
 
-  // Vertical bars
-  const barWidth = (chartWidth - 2 * padding) / (categories.length * data.length + categories.length - 1);
-  const groupWidth = barWidth * data.length + 10;
+  const maxValue = Math.max(...data.map((d) => d.value));
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900">{title}</h3>
-
-      <svg width="100%" height={height} viewBox={`0 0 ${chartWidth} ${height}`}>
+    <div className="bg-white rounded-lg p-6 border border-gray-200">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+      <svg
+        viewBox="0 0 800 300"
+        className="w-full"
+        style={{ height: `${height}px` }}
+      >
         {/* Grid lines */}
-        {Array.from({ length: 5 }).map((_, i) => (
+        {[0, 1, 2, 3, 4].map((i) => (
           <line
             key={`grid-${i}`}
-            x1={padding}
-            y1={padding + (i * (height - 2 * padding)) / 4}
-            x2={chartWidth - padding}
-            y2={padding + (i * (height - 2 * padding)) / 4}
-            stroke="#E5E7EB"
-            strokeDasharray="4"
+            x1="60"
+            y1={60 + (i * 200) / 4}
+            x2="780"
+            y2={60 + (i * 200) / 4}
+            stroke="#e5e7eb"
+            strokeWidth="1"
           />
         ))}
 
+        {/* Axes */}
+        <line x1="60" y1="260" x2="780" y2="260" stroke="#d1d5db" strokeWidth="2" />
+        <line x1="60" y1="60" x2="60" y2="260" stroke="#d1d5db" strokeWidth="2" />
+
         {/* Bars */}
-        {categories.map((category, catIndex) => (
-          <g key={`group-${catIndex}`}>
-            {data.map((series, seriesIndex) => {
-              const value = series.values[catIndex];
-              const barHeight = (value / maxValue) * (chartHeight - 20);
-              const x =
-                padding +
-                catIndex * groupWidth +
-                seriesIndex * barWidth;
-              const y = height - padding - barHeight;
+        {data.map((bar, idx) => {
+          const barWidth = 700 / data.length;
+          const barX = 70 + idx * barWidth;
+          const barHeight = (bar.value / maxValue) * 200;
+          const barY = 260 - barHeight;
+          const color = bar.color || "#3b82f6";
 
-              return (
-                <rect
-                  key={`bar-${catIndex}-${seriesIndex}`}
-                  x={x}
-                  y={y}
-                  width={barWidth - 2}
-                  height={barHeight}
-                  fill={series.color}
-                  opacity="0.8"
-                />
-              );
-            })}
-
-            {/* X-axis label */}
-            <text
-              x={padding + catIndex * groupWidth + groupWidth / 2 - barWidth}
-              y={height - 15}
-              textAnchor="middle"
-              fontSize="12"
-              fill="#6B7280"
-            >
-              {category}
-            </text>
-          </g>
-        ))}
-
-        {/* Y-axis labels */}
-        {Array.from({ length: 5 }).map((_, i) => {
-          const value = Math.round((i * maxValue) / 4);
           return (
-            <text
-              key={`y-label-${i}`}
-              x={padding - 10}
-              y={padding + ((4 - i) * (height - 2 * padding)) / 4 + 5}
-              textAnchor="end"
-              fontSize="12"
-              fill="#6B7280"
-            >
-              {value}
-            </text>
+            <g key={`bar-${idx}`}>
+              <rect
+                x={barX}
+                y={barY}
+                width={barWidth - 10}
+                height={barHeight}
+                fill={color}
+                rx="4"
+              />
+              <text
+                x={barX + (barWidth - 10) / 2}
+                y="285"
+                textAnchor="middle"
+                fontSize="12"
+                fill="#6b7280"
+              >
+                {bar.label}
+              </text>
+            </g>
           );
         })}
-
-        {/* Axes */}
-        <line
-          x1={padding}
-          y1={padding}
-          x2={padding}
-          y2={height - padding}
-          stroke="#9CA3AF"
-          strokeWidth="1"
-        />
-        <line
-          x1={padding}
-          y1={height - padding}
-          x2={chartWidth - padding}
-          y2={height - padding}
-          stroke="#9CA3AF"
-          strokeWidth="1"
-        />
       </svg>
-
-      {/* Legend */}
-      <div className="flex gap-4 mt-4 justify-center">
-        {data.map((series, i) => (
-          <div key={`legend-${i}`} className="flex items-center gap-2">
-            <div
-              className="w-3 h-3 rounded"
-              style={{ background: series.color }}
-            />
-            <span className="text-sm text-gray-700">{series.name}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

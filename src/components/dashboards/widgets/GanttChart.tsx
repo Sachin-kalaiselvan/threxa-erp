@@ -1,67 +1,87 @@
-// src/components/dashboard/widgets/GanttChart.tsx
+import React from "react";
 
-interface GanttItem {
+interface GanttTask {
   id: string;
-  label: string;
-  start: number;
-  duration: number;
-  status: "completed" | "in-progress" | "pending";
+  name: string;
+  start: number; // 0-100
+  duration: number; // 0-100
+  color?: string;
+  status?: "completed" | "in_progress" | "pending";
 }
 
 interface GanttChartProps {
   title: string;
-  items: GanttItem[];
-  maxTime?: number;
+  tasks: GanttTask[];
+  height?: number;
 }
 
 export default function GanttChart({
   title,
-  items,
-  maxTime = 24,
+  tasks,
+  height = 350,
 }: GanttChartProps) {
-  const getStatusColor = (status: string) => {
-    if (status === "completed") return "#10B981";
-    if (status === "in-progress") return "#F59E0B";
-    return "#D1D5DB";
+  if (!tasks || tasks.length === 0) {
+    return (
+      <div
+        className="bg-white rounded-lg p-6 border border-gray-200"
+        style={{ height: `${height}px` }}
+      >
+        <p className="text-gray-600 font-semibold">{title}</p>
+        <p className="text-gray-400 text-sm mt-4">No tasks available</p>
+      </div>
+    );
+  }
+
+  const statusColors = {
+    completed: "#10b981",
+    in_progress: "#3b82f6",
+    pending: "#f59e0b",
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900">{title}</h3>
-
-      <div className="space-y-3">
-        {items.map((item) => (
-          <div key={item.id}>
-            <p className="text-sm font-medium text-gray-700 mb-1">
-              {item.label}
-            </p>
-            <div className="flex gap-2 items-center">
-              <div className="flex-1 bg-gray-100 rounded h-8 relative">
-                <div
-                  className="h-8 rounded flex items-center px-2 text-white text-xs font-semibold"
-                  style={{
-                    background: getStatusColor(item.status),
-                    width: `${(item.duration / maxTime) * 100}%`,
-                    marginLeft: `${(item.start / maxTime) * 100}%`,
-                  }}
-                  title={`${item.start}h - ${item.start + item.duration}h`}
-                >
-                  {item.duration}h
-                </div>
-              </div>
-              <span className="text-xs text-gray-500 w-12 text-right">
-                {item.status}
-              </span>
+    <div className="bg-white rounded-lg p-6 border border-gray-200">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+      <div className="space-y-4">
+        {/* Timeline header */}
+        <div className="flex items-center gap-4">
+          <div className="w-32 text-sm font-medium text-gray-700">Task</div>
+          <div className="flex-1">
+            <div className="flex justify-between text-xs text-gray-500 px-2">
+              <span>0%</span>
+              <span>25%</span>
+              <span>50%</span>
+              <span>75%</span>
+              <span>100%</span>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Time labels */}
-      <div className="mt-4 text-xs text-gray-500 flex justify-between px-2">
-        {Array.from({ length: Math.ceil(maxTime / 4) + 1 }).map((_, i) => (
-          <span key={`time-${i}`}>{i * 4}h</span>
-        ))}
+        {/* Tasks */}
+        {tasks.map((task) => {
+          const color =
+            task.color ||
+            statusColors[task.status || "pending"] ||
+            "#3b82f6";
+
+          return (
+            <div key={task.id} className="flex items-center gap-4">
+              <div className="w-32 text-sm text-gray-700 font-medium truncate">
+                {task.name}
+              </div>
+              <div className="flex-1 h-8 bg-gray-100 rounded-lg relative overflow-hidden">
+                <div
+                  className="h-full rounded-lg"
+                  style={{
+                    marginLeft: `${task.start}%`,
+                    width: `${task.duration}%`,
+                    backgroundColor: color,
+                    opacity: 0.8,
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
