@@ -1,87 +1,70 @@
-// src/components/dashboard/widgets/Heatmap.tsx
+import React from "react";
 
 interface HeatmapCell {
+  label: string;
   value: number;
-  min?: number;
-  max?: number;
+  max: number;
 }
 
 interface HeatmapProps {
   title: string;
-  rows: string[];
-  columns: string[];
-  data: HeatmapCell[][];
-  unit?: string;
+  rows: Array<{
+    name: string;
+    cells: HeatmapCell[];
+  }>;
 }
 
-export default function Heatmap({
-  title,
-  rows,
-  columns,
-  data,
-  unit = "",
-}: HeatmapProps) {
-  // Find global min/max
-  const allValues = data.flat().map((cell) => cell.value);
-  const globalMin = Math.min(...allValues);
-  const globalMax = Math.max(...allValues);
-  const range = globalMax - globalMin || 1;
+export default function Heatmap({ title, rows }: HeatmapProps) {
+  if (!rows || rows.length === 0) {
+    return (
+      <div className="bg-white rounded-lg p-6 border border-gray-200 h-96 flex items-center justify-center">
+        <p className="text-gray-400">No data available</p>
+      </div>
+    );
+  }
 
-  const getColor = (value: number) => {
-    const normalized = (value - globalMin) / range;
-
-    if (normalized < 0.33) {
-      return "#EF4444"; // Red - low stock
-    } else if (normalized < 0.66) {
-      return "#F59E0B"; // Orange - medium
-    } else {
-      return "#10B981"; // Green - high
-    }
+  const getColor = (value: number, max: number) => {
+    const percentage = (value / max) * 100;
+    if (percentage < 20) return "#fecaca"; // light red
+    if (percentage < 40) return "#fca5a5"; // red
+    if (percentage < 60) return "#fb923c"; // orange
+    if (percentage < 80) return "#84cc16"; // lime
+    return "#22c55e"; // green
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
-      <h3 className="text-lg font-semibold mb-6 text-gray-900">{title}</h3>
+    <div className="bg-white rounded-lg p-6 border border-gray-200">
+      <h3 className="text-lg font-semibold text-gray-900 mb-6">{title}</h3>
 
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th className="w-24 text-left text-xs font-semibold text-gray-700 pb-3">
-                Item
-              </th>
-              {columns.map((col) => (
-                <th
-                  key={col}
-                  className="px-2 py-2 text-center text-xs font-semibold text-gray-700"
-                >
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
+        <table className="w-full">
           <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={row}>
-                <td className="font-medium text-sm text-gray-900 py-2">
-                  {row}
+            {rows.map((row, idx) => (
+              <tr key={idx}>
+                <td className="pr-4 py-2 text-sm font-medium text-gray-700 w-32">
+                  {row.name}
                 </td>
-                {data[rowIndex]?.map((cell, colIndex) => (
-                  <td
-                    key={`${row}-${colIndex}`}
-                    className="px-2 py-2 text-center"
-                  >
-                    <div
-                      className="rounded p-2 text-white text-xs font-semibold text-center"
-                      style={{
-                        background: getColor(cell.value),
-                      }}
-                      title={`${cell.value}${unit} (Min: ${cell.min}, Max: ${cell.max})`}
-                    >
-                      {cell.value}
-                    </div>
-                  </td>
-                ))}
+                <td>
+                  <div className="flex gap-2">
+                    {row.cells.map((cell, cellIdx) => {
+                      const color = getColor(cell.value, cell.max);
+                      return (
+                        <div key={cellIdx} className="flex flex-col items-center">
+                          <div
+                            className="w-10 h-10 rounded border border-gray-300 flex items-center justify-center text-xs font-medium text-gray-700"
+                            style={{ backgroundColor: color }}
+                            title={`${cell.label}: ${cell.value}/${cell.max}`}
+                          >
+                            {cell.value}
+                          </div>
+                          <span className="text-xs text-gray-500 mt-1">
+                            {cell.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -89,18 +72,26 @@ export default function Heatmap({
       </div>
 
       {/* Legend */}
-      <div className="flex gap-6 mt-4 text-xs">
+      <div className="mt-6 flex gap-4 text-xs">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-red-500" />
-          <span className="text-gray-600">Low</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: "#fecaca" }} />
+          <span>0-20%</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-amber-500" />
-          <span className="text-gray-600">Medium</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: "#fca5a5" }} />
+          <span>20-40%</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-green-500" />
-          <span className="text-gray-600">High</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: "#fb923c" }} />
+          <span>40-60%</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: "#84cc16" }} />
+          <span>60-80%</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: "#22c55e" }} />
+          <span>80-100%</span>
         </div>
       </div>
     </div>
