@@ -1,6 +1,6 @@
-// src/components/dashboard/charts/DonutChart.tsx
+import React from "react";
 
-interface DonutSegment {
+interface DonutData {
   label: string;
   value: number;
   color: string;
@@ -8,118 +8,79 @@ interface DonutSegment {
 
 interface DonutChartProps {
   title: string;
-  segments: DonutSegment[];
-  total: number;
-  centerText?: string;
-  centerSubtext?: string;
-  size?: number;
+  data: DonutData[];
 }
 
-export default function DonutChart({
-  title,
-  segments,
-  total,
-  centerText,
-  centerSubtext,
-  size = 200,
-}: DonutChartProps) {
-  const centerX = size / 2;
-  const centerY = size / 2;
-  const outerRadius = size / 2 - 20;
-  const innerRadius = outerRadius - 25;
+export default function DonutChart({ title, data }: DonutChartProps) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-white rounded-lg p-6 border border-gray-200 h-80 flex items-center justify-center">
+        <p className="text-gray-400">No data available</p>
+      </div>
+    );
+  }
 
+  const total = data.reduce((sum, d) => sum + d.value, 0);
   let currentAngle = 0;
-  const arcs = segments.map((segment) => {
-    const sliceAngle = (segment.value / total) * 360;
+
+  const slices = data.map((item) => {
+    const sliceAngle = (item.value / total) * 360;
     const startAngle = currentAngle;
     const endAngle = currentAngle + sliceAngle;
+    currentAngle = endAngle;
 
     const startRad = (startAngle * Math.PI) / 180;
     const endRad = (endAngle * Math.PI) / 180;
 
-    const x1 = centerX + outerRadius * Math.cos(startRad);
-    const y1 = centerY + outerRadius * Math.sin(startRad);
-    const x2 = centerX + outerRadius * Math.cos(endRad);
-    const y2 = centerY + outerRadius * Math.sin(endRad);
-
-    const x3 = centerX + innerRadius * Math.cos(endRad);
-    const y3 = centerY + innerRadius * Math.sin(endRad);
-    const x4 = centerX + innerRadius * Math.cos(startRad);
-    const y4 = centerY + innerRadius * Math.sin(startRad);
+    const x1 = 100 + 80 * Math.cos(startRad);
+    const y1 = 100 + 80 * Math.sin(startRad);
+    const x2 = 100 + 80 * Math.cos(endRad);
+    const y2 = 100 + 80 * Math.sin(endRad);
 
     const largeArc = sliceAngle > 180 ? 1 : 0;
 
-    const pathData = [
-      `M ${x1} ${y1}`,
-      `A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2} ${y2}`,
-      `L ${x3} ${y3}`,
-      `A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4}`,
-      "Z",
-    ].join(" ");
+    const path = `M 100 100 L ${x1} ${y1} A 80 80 0 ${largeArc} 1 ${x2} ${y2} Z`;
 
-    currentAngle += sliceAngle;
-
-    return { pathData, color: segment.color, segment };
+    return { path, color: item.color, label: item.label, value: item.value };
   });
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900">{title}</h3>
-
-      <div className="flex items-center justify-center gap-8">
-        {/* Donut SVG */}
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          {arcs.map((arc, i) => (
+    <div className="bg-white rounded-lg p-6 border border-gray-200">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+      <div className="flex items-center justify-between">
+        <svg viewBox="0 0 200 200" className="w-48 h-48">
+          {slices.map((slice, idx) => (
             <path
-              key={`arc-${i}`}
-              d={arc.pathData}
-              fill={arc.color}
+              key={`slice-${idx}`}
+              d={slice.path}
+              fill={slice.color}
               stroke="white"
               strokeWidth="2"
             />
           ))}
-
-          {/* Center text */}
-          {centerText && (
-            <>
-              <text
-                x={centerX}
-                y={centerY - 5}
-                textAnchor="middle"
-                fontSize="18"
-                fontWeight="bold"
-                fill="#1A202C"
-              >
-                {centerText}
-              </text>
-              {centerSubtext && (
-                <text
-                  x={centerX}
-                  y={centerY + 15}
-                  textAnchor="middle"
-                  fontSize="12"
-                  fill="#6B7280"
-                >
-                  {centerSubtext}
-                </text>
-              )}
-            </>
-          )}
+          <circle cx="100" cy="100" r="40" fill="white" />
+          <text
+            x="100"
+            y="105"
+            textAnchor="middle"
+            fontSize="20"
+            fontWeight="bold"
+            fill="#1f2937"
+          >
+            {total}
+          </text>
         </svg>
 
-        {/* Legend */}
         <div className="space-y-2">
-          {segments.map((segment, i) => (
-            <div key={`legend-${i}`} className="flex items-center gap-2">
+          {data.map((item, idx) => (
+            <div key={`legend-${idx}`} className="flex items-center gap-2">
               <div
                 className="w-3 h-3 rounded-full"
-                style={{ background: segment.color }}
+                style={{ backgroundColor: item.color }}
               />
-              <span className="text-sm text-gray-700">
-                {segment.label}
-              </span>
-              <span className="text-sm font-semibold text-gray-900">
-                {((segment.value / total) * 100).toFixed(1)}%
+              <span className="text-sm text-gray-700">{item.label}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {item.value} ({((item.value / total) * 100).toFixed(1)}%)
               </span>
             </div>
           ))}
