@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { BarChart3, Factory, Package, TrendingUp } from "lucide-react";
+import { BarChart3, Factory, Package, TrendingUp, LogOut, Settings, Bell } from "lucide-react";
+import threxaIcon from "../assets/threxa-icon.png";
+import threxaWordmark from "../assets/threxa-wordmark.png";
 
 // ==================== CHART COMPONENTS ====================
 
@@ -330,8 +332,6 @@ function DataTable({
   );
 }
 
-// ==================== KPI CARD ====================
-
 function KPICard({
   title,
   value,
@@ -370,9 +370,9 @@ export default function Dashboard() {
 
   const tabs = [
     { id: "command", label: "Command Centre", icon: BarChart3 },
-    { id: "production", label: "Production Control Room", icon: Factory },
-    { id: "inventory", label: "Inventory & Procurement", icon: Package },
-    { id: "analytics", label: "Business Analytics", icon: TrendingUp },
+    { id: "production", label: "Production Control", icon: Factory },
+    { id: "inventory", label: "Inventory", icon: Package },
+    { id: "analytics", label: "Analytics", icon: TrendingUp },
   ];
 
   // ==================== COMMAND CENTRE TAB ====================
@@ -628,9 +628,35 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
+      {/* Premium Header */}
+      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo & Wordmark - actual brand assets, nothing else */}
+            <div className="flex items-center gap-2.5">
+              <img src={threxaIcon} alt="Threxa" className="h-9 w-9 object-contain" />
+              <img src={threxaWordmark} alt="Threxa" className="h-6 object-contain" />
+            </div>
+
+            {/* Right Actions */}
+            <div className="flex items-center gap-4">
+              <button className="p-2 hover:bg-gray-100 rounded-lg transition">
+                <Bell size={20} className="text-gray-600" />
+              </button>
+              <button className="p-2 hover:bg-gray-100 rounded-lg transition">
+                <Settings size={20} className="text-gray-600" />
+              </button>
+              <button className="p-2 hover:bg-gray-100 rounded-lg transition">
+                <LogOut size={20} className="text-gray-600" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Tab Navigation */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex gap-3 overflow-x-auto">
             {tabs.map((tab) => {
@@ -657,7 +683,7 @@ export default function Dashboard() {
       </div>
 
       {/* Tab Content */}
-      <div className="p-6 bg-gray-50 min-h-[calc(100vh-70px)]">
+      <div className="p-6 min-h-[calc(100vh-130px)]">
         {activeTab === "command" && commandContent}
         {activeTab === "production" && productionContent}
         {activeTab === "inventory" && inventoryContent}
