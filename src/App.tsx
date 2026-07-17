@@ -5,7 +5,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import Layout from "./components/Layout";
 
-// Pages
 import Login from "./pages/Login";
 import Customers from "./pages/Customers";
 import Orders from "./pages/Orders";
