@@ -1,121 +1,101 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "../lib/supabase";
+import PageLayout from "../components/PageLayout";
 
-/* Daily attendance marking. One tap cycles present -> half day -> absent.
-   Rows upsert on (employee_id, att_date). */
-
-type Status = "present" | "half_day" | "absent";
-const cycle: Record<Status, Status> = { present: "half_day", half_day: "absent", absent: "present" };
-const styles: Record<Status, string> = {
-  present: "bg-green-500/15 text-green-400 border-green-500/30",
-  half_day: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
-  absent: "bg-red-500/15 text-red-400 border-red-500/30",
-};
-const labels: Record<Status, string> = { present: "Present", half_day: "Half Day", absent: "Absent" };
+interface AttendanceRecord {
+  id: string;
+  employee_id: string;
+  employee_name: string;
+  date: string;
+  check_in: string;
+  check_out: string;
+  status: "present" | "absent" | "leave" | "half_day";
+  hours_worked: string;
+}
 
 export default function Attendance() {
-  const qc = useQueryClient();
-  const today = new Date().toISOString().slice(0, 10);
-  const [date, setDate] = useState(today);
-
-  const { data: employees = [] } = useQuery({
-    queryKey: ["employees-active"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("employees").select("id, name, designation, daily_wage")
-        .eq("is_active", true).order("name");
-      if (error) throw error;
-      return data as { id: string; name: string; designation: string | null; daily_wage: number }[];
+  const [attendance] = useState<AttendanceRecord[]>([
+    {
+      id: "1",
+      employee_id: "EMP-001",
+      employee_name: "Rajesh Kumar",
+      date: "17 Jul 2024",
+      check_in: "09:00 AM",
+      check_out: "06:00 PM",
+      status: "present",
+      hours_worked: "9.0",
     },
-  });
-
-  const { data: marks = {} } = useQuery({
-    queryKey: ["attendance", date],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("attendance").select("employee_id, status").eq("att_date", date);
-      if (error) throw error;
-      return Object.fromEntries(data.map((r) => [r.employee_id, r.status])) as Record<string, Status>;
+    {
+      id: "2",
+      employee_id: "EMP-002",
+      employee_name: "Priya Sharma",
+      date: "17 Jul 2024",
+      check_in: "09:15 AM",
+      check_out: "05:45 PM",
+      status: "present",
+      hours_worked: "8.5",
     },
-  });
-
-  const mark = useMutation({
-    mutationFn: async ({ employeeId, status }: { employeeId: string; status: Status }) => {
-      const { error } = await supabase
-        .from("attendance")
-        .upsert({ employee_id: employeeId, att_date: date, status }, { onConflict: "employee_id,att_date" });
-      if (error) throw error;
+    {
+      id: "3",
+      employee_id: "EMP-003",
+      employee_name: "Amit Patel",
+      date: "17 Jul 2024",
+      check_in: "-",
+      check_out: "-",
+      status: "leave",
+      hours_worked: "0",
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["attendance", date] }),
-  });
-
-  const markAll = useMutation({
-    mutationFn: async () => {
-      const rows = employees.map((e) => ({ employee_id: e.id, att_date: date, status: "present" as Status }));
-      const { error } = await supabase.from("attendance").upsert(rows, { onConflict: "employee_id,att_date" });
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["attendance", date] }),
-  });
-
-  const counts = employees.reduce(
-    (acc, e) => {
-      const s = marks[e.id];
-      if (s) acc[s]++;
-      else acc.unmarked++;
-      return acc;
-    },
-    { present: 0, half_day: 0, absent: 0, unmarked: 0 }
-  );
+  ]);
 
   return (
-    <div>
-      <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Attendance</h1>
-        <div className="flex items-center gap-3">
-          <input type="date" className="input w-[160px]" value={date} max={today}
-            onChange={(e) => setDate(e.target.value)} />
-          <button className="btn-ghost" onClick={() => markAll.mutate()}>Mark all present</button>
-        </div>
-      </div>
-
-      <div className="mb-4 flex gap-3 text-[12px] text-[#B9BAC5]">
-        <span>Present: <b className="text-green-400">{counts.present}</b></span>
-        <span>Half day: <b className="text-yellow-400">{counts.half_day}</b></span>
-        <span>Absent: <b className="text-red-400">{counts.absent}</b></span>
-        <span>Unmarked: <b>{counts.unmarked}</b></span>
-      </div>
-
-      <div className="card overflow-hidden">
-        <table className="w-full text-[13px]">
-          <tbody>
-            {employees.length === 0 && (
-              <tr><td className="px-4 py-6 text-[#B9BAC5]">Add employees first (People → Employees).</td></tr>
-            )}
-            {employees.map((e) => {
-              const s = marks[e.id];
-              return (
-                <tr key={e.id} className="border-b border-white/[.04]">
-                  <td className="px-4 py-3 font-medium">{e.name}</td>
-                  <td className="px-4 py-3 text-[#B9BAC5]">{e.designation || "—"}</td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      className={`rounded-lg border px-4 py-1.5 text-[12px] ${
-                        s ? styles[s] : "border-white/[.1] text-[#B9BAC5]"
+    <PageLayout
+      title="Attendance"
+      subtitle="Track employee attendance and leaves"
+    >
+      {/* Attendance Table */}
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead style={{ background: "#1a1a1a" }}>
+              <tr>
+                <th className="text-left py-4 px-6 text-white font-semibold text-sm">EMPLOYEE ID</th>
+                <th className="text-left py-4 px-6 text-white font-semibold text-sm">EMPLOYEE NAME</th>
+                <th className="text-left py-4 px-6 text-white font-semibold text-sm">DATE</th>
+                <th className="text-center py-4 px-6 text-white font-semibold text-sm">CHECK IN</th>
+                <th className="text-center py-4 px-6 text-white font-semibold text-sm">CHECK OUT</th>
+                <th className="text-center py-4 px-6 text-white font-semibold text-sm">HOURS WORKED</th>
+                <th className="text-left py-4 px-6 text-white font-semibold text-sm">STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {attendance.map((record) => (
+                <tr key={record.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-4 px-6 font-semibold text-gray-900">{record.employee_id}</td>
+                  <td className="py-4 px-6 text-gray-700">{record.employee_name}</td>
+                  <td className="py-4 px-6 text-gray-700">{record.date}</td>
+                  <td className="py-4 px-6 text-center text-gray-700">{record.check_in}</td>
+                  <td className="py-4 px-6 text-center text-gray-700">{record.check_out}</td>
+                  <td className="py-4 px-6 text-center font-semibold text-gray-900">{record.hours_worked}</td>
+                  <td className="py-4 px-6">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        record.status === "present"
+                          ? "bg-green-100 text-green-700"
+                          : record.status === "absent"
+                          ? "bg-red-100 text-red-700"
+                          : record.status === "leave"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-blue-100 text-blue-700"
                       }`}
-                      onClick={() => mark.mutate({ employeeId: e.id, status: s ? cycle[s] : "present" })}
                     >
-                      {s ? labels[s] : "Mark"}
-                    </button>
+                      {record.status.charAt(0).toUpperCase() + record.status.slice(1).replace(/_/g, " ")}
+                    </span>
                   </td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <p className="mt-3 text-[11px] text-[#B9BAC5]">Tap a status to cycle: Present → Half Day → Absent.</p>
-    </div>
+    </PageLayout>
   );
 }
