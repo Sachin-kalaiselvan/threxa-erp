@@ -101,7 +101,7 @@ export default function App() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Dashboard />} />
         <Route path="/customers" element={<Customers />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/production" element={<Production />} />
