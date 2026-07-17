@@ -1,105 +1,92 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, BarChart3, Package, Zap, FileText, Truck, Users, LogOut, Menu, X, DollarSign, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import threxaIcon from "../assets/threxa-icon.png";
 
-interface NavItem {
-  label: string;
-  path: string;
-  icon: React.ReactNode;
-}
-
-const navItems: NavItem[] = [
-  { label: "Dashboard", path: "/", icon: <BarChart3 size={18} /> },
-  { label: "Customers", path: "/customers", icon: <Users size={18} /> },
-  { label: "Orders", path: "/orders", icon: <Package size={18} /> },
-  { label: "Production", path: "/production", icon: <Zap size={18} /> },
-  { label: "Quotations", path: "/quotations", icon: <FileText size={18} /> },
-  { label: "Invoices", path: "/invoices", icon: <DollarSign size={18} /> },
-  { label: "Dispatch", path: "/dispatch", icon: <Truck size={18} /> },
+const menuItems = [
+  { path: "/", label: "Dashboard", icon: "📊" },
+  { path: "/customers", label: "Customers", icon: "👥" },
+  { path: "/orders", label: "Orders", icon: "📋" },
+  { path: "/production", label: "Production", icon: "⚙️" },
+  { path: "/quotations", label: "Quotations", icon: "📄" },
+  { path: "/invoices", label: "Invoices", icon: "💳" },
+  { path: "/dispatch", label: "Dispatch", icon: "🚚" },
+  { path: "/products", label: "Products", icon: "📦" },
+  { path: "/inventory", label: "Inventory", icon: "🏭" },
+  { path: "/employees", label: "Employees", icon: "👔" },
+  { path: "/attendance", label: "Attendance", icon: "⏰" },
+  { path: "/payroll", label: "Payroll", icon: "💰" },
+  { path: "/cashbook", label: "Cash Book", icon: "📈" },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const location = useLocation();
+  const navigate = useNavigate();
+  const currentPath = window.location.pathname;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/login";
+    navigate("/login");
   };
 
   return (
-    <div className="flex h-screen bg-[#0a0b13]">
+    <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <div
         className={`${
           sidebarOpen ? "w-64" : "w-20"
-        } border-r border-white/[.06] bg-[#0b0c14] transition-all duration-300 flex flex-col`}
+        } bg-white border-r border-gray-200 transition-all duration-300 flex flex-col`}
       >
         {/* Logo */}
-        <div className="h-16 border-b border-white/[.06] flex items-center justify-center">
-          <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            {sidebarOpen ? "Threxa" : "T"}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <img src={threxaIcon} alt="Threxa" className="h-10 w-10 object-contain" />
+            {sidebarOpen && <span className="font-bold text-lg text-gray-900">Threxa</span>}
           </div>
         </div>
 
-        {/* Nav Items */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors ${
-                  isActive
-                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                    : "text-[#B9BAC5] hover:bg-white/[.05]"
-                }`}
-              >
-                {item.icon}
-                {sidebarOpen && <span>{item.label}</span>}
-              </Link>
-            );
-          })}
+        {/* Menu */}
+        <nav className="flex-1 overflow-y-auto p-4">
+          {menuItems.map((item) => (
+            <button
+              key={item.path}
+              onClick={() => navigate(item.path)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+                currentPath === item.path
+                  ? "bg-blue-100 text-blue-600 font-semibold"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              <span className="text-xl">{item.icon}</span>
+              {sidebarOpen && <span>{item.label}</span>}
+            </button>
+          ))}
         </nav>
 
-        {/* Toggle & Logout */}
-        <div className="border-t border-white/[.06] p-4 space-y-2">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center justify-center px-4 py-2 text-[#B9BAC5] hover:bg-white/[.05] rounded-lg transition-colors"
-          >
-            {sidebarOpen ? <ChevronDown size={18} /> : <Menu size={18} />}
-          </button>
+        {/* Logout */}
+        <div className="p-4 border-t border-gray-200">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-[#B9BAC5] hover:text-red-400 text-sm rounded-lg hover:bg-red-500/10 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 font-medium"
           >
-            <LogOut size={18} />
+            <span className="text-xl">🚪</span>
             {sidebarOpen && <span>Logout</span>}
+          </button>
+        </div>
+
+        {/* Toggle */}
+        <div className="p-4 border-t border-gray-200">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="w-full py-2 text-gray-600 hover:text-gray-900 text-sm font-medium"
+          >
+            {sidebarOpen ? "←" : "→"}
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
-        <div className="h-16 border-b border-white/[.06] bg-[#0b0c14] px-8 flex items-center justify-between">
-          <h2 className="text-sm text-[#B9BAC5]">Threxa ERP — Carton Box Manufacturer</h2>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden text-[#B9BAC5] hover:text-white"
-          >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-
-        {/* Page Content */}
-        <div className="flex-1 overflow-auto">
-          <div className="p-8">{children}</div>
-        </div>
-      </div>
+      <div className="flex-1 overflow-auto">{children}</div>
     </div>
   );
 }
