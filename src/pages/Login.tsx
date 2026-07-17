@@ -4,37 +4,32 @@ import threxaIcon from "../assets/threxa-icon.png";
 import threxaWordmark from "../assets/threxa-wordmark.png";
 
 /**
- * Login — THE PORTAL OPENING
- * --------------------------
- * The original ThrexaIntro sequence, re-staged so it plays BEFORE
- * authentication. One continuous shot:
+ * Login — THE PORTAL OPENING (v2 — deterministic timeline)
+ * ----------------------------------------------------------
+ * Everything is driven by fixed CSS animation-delay values counted
+ * from mount, exactly like the original ThrexaIntro. No runtime
+ * measurement, no getBoundingClientRect, no race conditions — the
+ * header logo and the card position are both hardcoded to line up,
+ * so they cannot desync or leave the screen blank.
  *
- *  0.0-0.6   stars fade in over black
- *  0.6-1.2   Earth silhouette fades in (bottom, thin blue atmosphere)
- *  1.2-3.2   sunrise begins at the FAR LEFT edge of the planet and
- *            travels along the curved horizon toward center, leaving
- *            a faint purple energy trail on the limb behind it
- *  3.2-3.7   ARRIVAL — hold
- *  3.7-3.85  the whole horizon flashes
- *  3.85-4.25 the light collapses into one energy sphere above the limb
- *  4.25-4.55 the sphere pulses once
- *  4.55-5.3  THE BIRTH — the sphere dissolves as the official logo
- *            condenses out of the light (blur 14->0, scale 1.5->1)
- *  5.25-5.75 the two stars glint
- *  6.2-6.9   THREXA is projected from the logo's right side
- *            (clip-path reveal + leading light streak)
- *  7.4-8.2   THE PORTAL — logo + wordmark travel into the login card's
- *            brand position while the card materializes around them;
- *            the credential fields cascade open
- *  8.2+      interactive login
+ * Timeline (seconds from mount):
+ *  0.0-0.6   stars + earth fade in
+ *  1.2-3.2   sunrise travels the horizon
+ *  3.85-4.25 light collapses into the energy sphere
+ *  4.55-5.3  THE BIRTH — logo condenses from light (stays centered)
+ *  6.2-6.9   THREXA projects from the logo's right side
+ *  7.3-8.15  logo + wordmark settle upward into the header position
+ *  7.7-8.3   the login card fades in directly below the header
+ *  7.9-8.6   email / password / button / footnote cascade in
+ *  8.0-8.6   the space scene fades away, leaving the persistent
+ *            starfield + Earth glow (same visuals, seamless)
  *
  * Plays once per browser session. ?intro=1 always replays it.
- * A Skip button is available the whole time.
+ * Skip button available throughout.
  */
 
 const INTRO_KEY = "threxa_login_intro_done";
-const T_TRAVEL_MS = 7400; // logo begins travelling into the card
-const T_DONE_MS = 8300;   // card fully interactive
+const CLEANUP_MS = 8800;
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -42,63 +37,17 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // "intro" -> cinematic playing | "travel" -> logo flying into card | "done" -> interactive
-  const [phase, setPhase] = useState<"intro" | "travel" | "done">(() => {
+  const [playIntro, setPlayIntro] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("intro") === "1") return "intro";
-    return sessionStorage.getItem(INTRO_KEY) ? "done" : "intro";
+    if (params.get("intro") === "1") return true;
+    return !sessionStorage.getItem(INTRO_KEY);
   });
 
   const starWrapRef = useRef<HTMLDivElement>(null);
   const cityLightsRef = useRef<HTMLDivElement>(null);
-  const cardIconRef = useRef<HTMLImageElement>(null);
-  const cardWordRef = useRef<HTMLImageElement>(null);
-  const flyIconRef = useRef<HTMLDivElement>(null);
-  const flyWordRef = useRef<HTMLDivElement>(null);
-  const timersRef = useRef<number[]>([]);
+  const cleanupTimer = useRef<number | null>(null);
 
-  // timeline driver
-  useEffect(() => {
-    if (phase !== "intro") return;
-
-    const t1 = window.setTimeout(() => beginTravel(), T_TRAVEL_MS);
-    const t2 = window.setTimeout(() => finish(), T_DONE_MS);
-    timersRef.current = [t1, t2];
-    return () => timersRef.current.forEach(clearTimeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
-
-  const beginTravel = () => {
-    // measure where the card's real brand sits and aim the flying
-    // logo/wordmark at those exact rects
-    const icon = cardIconRef.current?.getBoundingClientRect();
-    const word = cardWordRef.current?.getBoundingClientRect();
-    const fi = flyIconRef.current;
-    const fw = flyWordRef.current;
-    if (icon && fi) {
-      fi.style.setProperty("--tx", `${icon.left + icon.width / 2 - window.innerWidth / 2}px`);
-      fi.style.setProperty("--ty", `${icon.top + icon.height / 2 - window.innerHeight * 0.45}px`);
-      fi.style.setProperty("--ts", `${icon.width / 150}`);
-    }
-    if (word && fw) {
-      fw.style.setProperty("--tx", `${word.left + word.width / 2 - (window.innerWidth / 2 + 92 + 110)}px`);
-      fw.style.setProperty("--ty", `${word.top + word.height / 2 - window.innerHeight * 0.45}px`);
-      fw.style.setProperty("--tw", `${word.width}px`);
-    }
-    setPhase("travel");
-  };
-
-  const finish = () => {
-    sessionStorage.setItem(INTRO_KEY, "1");
-    setPhase("done");
-  };
-
-  const skip = () => {
-    timersRef.current.forEach(clearTimeout);
-    finish();
-  };
-
-  // starfield + city lights — identical technique to the original intro
+  // persistent starfield — populated once, lives for the whole session
   useEffect(() => {
     const wrap = starWrapRef.current;
     if (wrap) {
@@ -152,6 +101,25 @@ export default function Login() {
     }
   }, []);
 
+  // once the intro finishes naturally, mark it played and drop the
+  // heavy scene DOM (by then it has already faded to invisible)
+  useEffect(() => {
+    if (!playIntro) return;
+    cleanupTimer.current = window.setTimeout(() => {
+      sessionStorage.setItem(INTRO_KEY, "1");
+      setPlayIntro(false);
+    }, CLEANUP_MS);
+    return () => {
+      if (cleanupTimer.current) clearTimeout(cleanupTimer.current);
+    };
+  }, [playIntro]);
+
+  const skip = () => {
+    if (cleanupTimer.current) clearTimeout(cleanupTimer.current);
+    sessionStorage.setItem(INTRO_KEY, "1");
+    setPlayIntro(false);
+  };
+
   const signIn = async () => {
     if (!email || !password) {
       setError("Enter your email and password.");
@@ -164,28 +132,42 @@ export default function Login() {
     setBusy(false);
   };
 
-  const cinematic = phase !== "done";
-  const travelling = phase === "travel";
-
   return (
     <div className="lg-root">
-      {/* ---- persistent space backdrop (stays after the intro) ---- */}
-      <div className="lg-stars-static" ref={cinematic ? undefined : starWrapRef} />
+      {/* persistent space backdrop — always present */}
+      <div className="lg-stars" ref={starWrapRef} />
       <div className="lg-earth-glow" />
 
-      {/* ---- the login card — hidden until the portal opens ---- */}
-      <div className={`lg-card ${phase === "done" ? "lg-card-open" : "lg-card-hidden"}`}>
-        <div className="lg-brand">
-          <img ref={cardIconRef} src={threxaIcon} alt="" className="lg-icon" />
-          <img ref={cardWordRef} src={threxaWordmark} alt="THREXA" className="lg-wordmark" />
-        </div>
-        <p className="lg-tagline lg-cascade" style={{ "--i": 0 } as React.CSSProperties}>Manufacturing ERP</p>
+      {/* header brand — ALWAYS mounted so it never resets or desyncs.
+          During the intro it starts big & center, then settles up.
+          On a repeat visit (no intro) it renders directly in place. */}
+      <div className={`tx-h-icon ${playIntro ? "tx-h-anim" : "tx-h-settled"}`}>
+        <img src={threxaIcon} alt="Threxa" />
+        {playIntro && (
+          <>
+            <div className="tx-star-glint tx-g1" />
+            <div className="tx-star-glint tx-g2" />
+          </>
+        )}
+      </div>
+      <div className={`tx-h-word ${playIntro ? "tx-h-anim" : "tx-h-settled"}`}>
+        <img src={threxaWordmark} alt="THREXA" />
+      </div>
+      {playIntro && <div className="tx-word-streak" />}
+
+      {/* login card — fades in directly below the settled header */}
+      <div className={`lg-card ${playIntro ? "lg-card-anim" : "lg-card-settled"}`}>
+        <p className={`lg-tagline ${playIntro ? "lg-cascade" : ""}`} style={{ "--i": 0 } as React.CSSProperties}>
+          Manufacturing ERP
+        </p>
 
         <div className="lg-fields">
-          <label className="lg-label lg-cascade" style={{ "--i": 1 } as React.CSSProperties} htmlFor="lg-email">Email</label>
+          <label className={`lg-label ${playIntro ? "lg-cascade" : ""}`} style={{ "--i": 1 } as React.CSSProperties} htmlFor="lg-email">
+            Email
+          </label>
           <input
             id="lg-email"
-            className="lg-input lg-cascade"
+            className={`lg-input ${playIntro ? "lg-cascade" : ""}`}
             style={{ "--i": 2 } as React.CSSProperties}
             type="email"
             autoComplete="email"
@@ -195,10 +177,12 @@ export default function Login() {
             onKeyDown={(e) => e.key === "Enter" && signIn()}
           />
 
-          <label className="lg-label lg-cascade" style={{ "--i": 3 } as React.CSSProperties} htmlFor="lg-password">Password</label>
+          <label className={`lg-label ${playIntro ? "lg-cascade" : ""}`} style={{ "--i": 3 } as React.CSSProperties} htmlFor="lg-password">
+            Password
+          </label>
           <input
             id="lg-password"
-            className="lg-input lg-cascade"
+            className={`lg-input ${playIntro ? "lg-cascade" : ""}`}
             style={{ "--i": 4 } as React.CSSProperties}
             type="password"
             autoComplete="current-password"
@@ -210,7 +194,12 @@ export default function Login() {
 
           {error && <p className="lg-error">{error}</p>}
 
-          <button className="lg-btn lg-cascade" style={{ "--i": 5 } as React.CSSProperties} onClick={signIn} disabled={busy}>
+          <button
+            className={`lg-btn ${playIntro ? "lg-cascade" : ""}`}
+            style={{ "--i": 5 } as React.CSSProperties}
+            onClick={signIn}
+            disabled={busy}
+          >
             {busy ? (
               <span className="lg-btn-busy">
                 <span className="lg-spinner" />
@@ -222,20 +211,20 @@ export default function Login() {
           </button>
         </div>
 
-        <p className="lg-footnote lg-cascade" style={{ "--i": 6 } as React.CSSProperties}>
+        <p className={`lg-footnote ${playIntro ? "lg-cascade" : ""}`} style={{ "--i": 6 } as React.CSSProperties}>
           Accounts are created by the administrator.
         </p>
       </div>
 
-      <p className={`lg-credit ${phase === "done" ? "lg-credit-show" : ""}`}>
+      <p className={`lg-credit ${playIntro ? "lg-cascade" : ""}`} style={{ "--i": 7 } as React.CSSProperties}>
         Threxa ERP · Smart Packaging Solutions
       </p>
 
-      {/* ================= THE CONTINUOUS SHOT ================= */}
-      {cinematic && (
+      {/* the space cinematic — mounts only while the intro is playing */}
+      {playIntro && (
         <>
-          <div className={`tx-scene ${travelling ? "tx-scene-dim" : ""}`}>
-            <div className="tx-starfield" ref={starWrapRef} />
+          <div className="tx-scene">
+            <div className="tx-starfield" />
             <div className="tx-earth">
               <div className="tx-continents">
                 <svg viewBox="0 0 1000 160" preserveAspectRatio="none">
@@ -272,39 +261,23 @@ export default function Login() {
             </div>
             <div className="tx-energy-sphere" />
           </div>
-
-          {/* the official logo — born from the sphere, then flies INTO the card */}
-          <div ref={flyIconRef} className={`tx-logo-icon ${travelling ? "tx-fly" : ""}`}>
-            <img src={threxaIcon} alt="Threxa" />
-            <div className="tx-star-glint tx-g1" />
-            <div className="tx-star-glint tx-g2" />
-          </div>
-
-          <div className="tx-word-streak" />
-          <div ref={flyWordRef} className={`tx-wordmark ${travelling ? "tx-fly" : ""}`}>
-            <img src={threxaWordmark} alt="THREXA" />
-          </div>
-
           <button className="tx-skip" onClick={skip}>Skip ›</button>
         </>
       )}
 
       <style>{`
-        .lg-root{
-          position:fixed; inset:0; background:#05060A;
-          display:flex; align-items:center; justify-content:center;
-          overflow:hidden;
-        }
+        .lg-root{ position:fixed; inset:0; background:#05060A; overflow:hidden; }
 
         /* ---------- persistent backdrop ---------- */
-        .lg-stars-static{ position:absolute; inset:0; }
+        .lg-stars{ position:absolute; inset:0; z-index:1; opacity:0; animation: txFadeIn .6s ease forwards; }
         .lg-root .tx-star{ position:absolute; background:#fff; border-radius:50%; opacity:.5;
           animation: txTwinkle 3.4s ease-in-out infinite; }
         @keyframes txTwinkle{ 0%,100%{opacity:.12;} 50%{opacity:.75;} }
+        @keyframes txFadeIn{ to{ opacity:1; } }
 
         .lg-earth-glow{
           position:absolute; left:50%; top:78vh; width:260vw; height:260vw;
-          margin-left:-130vw; border-radius:50%;
+          margin-left:-130vw; border-radius:50%; z-index:1;
           background:
             radial-gradient(ellipse 92% 15% at 50% 0%, rgba(16,42,88,.9) 0%, rgba(7,16,40,.92) 45%, rgba(2,4,12,1) 100%),
             #020309;
@@ -315,44 +288,124 @@ export default function Login() {
             inset 0 6px 70px rgba(80,140,255,.2);
         }
 
-        /* ---------- the card ---------- */
+        /* ================= HEADER BRAND (always mounted) ================= */
+        /* big-center base = where it's BORN; identical to the old intro's
+           logo position, so the birth animation looks exactly the same */
+        .tx-h-icon{
+          position:fixed; left:50%; z-index:22;
+          top:45vh; width:150px; height:150px; margin-left:-75px; margin-top:-75px;
+        }
+        .tx-h-icon img{ width:100%; height:100%; object-fit:contain; display:block; }
+        .tx-h-word{
+          position:fixed; left:50%; z-index:22;
+          top:45vh; width:220px;
+          transform: translateY(-50%) translate(92px, 0);
+        }
+        .tx-h-word img{ width:100%; display:block; }
+
+        /* ---- animated path: invisible -> birth -> settle up ---- */
+        .tx-h-icon.tx-h-anim{
+          opacity:0; transform:scale(1.5); filter:blur(14px);
+          animation:
+            txLogoBirth .75s cubic-bezier(.4,0,.2,1) 4.55s forwards,
+            txLogoPulse 2.6s ease-in-out 6.2s 1,
+            txIconSettle .85s cubic-bezier(.4,0,.2,1) 7.3s forwards;
+        }
+        @keyframes txLogoBirth{
+          0%{ opacity:0; transform:scale(1.5); filter:blur(14px); }
+          35%{ opacity:.6; }
+          100%{ opacity:1; transform:scale(1); filter:blur(0px); }
+        }
+        @keyframes txLogoPulse{
+          0%,100%{ filter: drop-shadow(0 0 7px rgba(157,108,255,.4)); }
+          50%{ filter: drop-shadow(0 0 15px rgba(157,108,255,.7)); }
+        }
+        @keyframes txIconSettle{
+          to{ transform: translate(0, -29vh) scale(.547); filter:blur(0px);
+              filter: drop-shadow(0 0 9px rgba(157,108,255,.5)); }
+        }
+
+        .tx-h-word.tx-h-anim{
+          clip-path: inset(0 100% 0 0); opacity:0;
+          animation:
+            txWordProject .7s cubic-bezier(.3,0,.2,1) 6.2s forwards,
+            txWordSettle .85s cubic-bezier(.4,0,.2,1) 7.3s forwards;
+        }
+        @keyframes txWordProject{
+          0%{ clip-path: inset(0 100% 0 0); opacity:.9; }
+          100%{ clip-path: inset(0 0% 0 0); opacity:1; }
+        }
+        @keyframes txWordSettle{
+          to{ transform: translateY(-50%) translate(118px, -29vh) scale(.682);
+              clip-path: inset(0 0% 0 0); }
+        }
+
+        /* ---- settled path: renders directly in final position, no animation ---- */
+        .tx-h-icon.tx-h-settled{
+          top:16vh; width:82px; height:82px; margin-left:-41px; margin-top:-41px;
+          opacity:1; filter: drop-shadow(0 0 9px rgba(157,108,255,.5));
+        }
+        .tx-h-word.tx-h-settled{
+          top:16vh; width:150px;
+          transform: translateY(-50%) translate(118px, 0);
+          opacity:1;
+        }
+
+        .tx-star-glint{ position:absolute; width:10px; height:10px; opacity:0; mix-blend-mode:screen;
+          background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(200,170,255,.7) 40%, rgba(157,108,255,0) 75%);
+          border-radius:50%; filter: blur(.5px);
+          animation: txGlintPop .3s ease forwards, txGlintTwinkle 1.7s ease-in-out infinite; }
+        .tx-star-glint.tx-g1{ left:76%; top:27%; animation-delay:5.25s, 5.55s; }
+        .tx-star-glint.tx-g2{ left:87%; top:45%; width:7px; height:7px; animation-delay:5.45s, 5.75s; }
+        @keyframes txGlintPop{ 0%{ opacity:0; transform:scale(0);} 100%{ opacity:1; transform:scale(1);} }
+        @keyframes txGlintTwinkle{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
+
+        .tx-word-streak{
+          position:fixed; left:50%; top:45vh; z-index:23; width:14px; height:34px; margin-top:-17px;
+          transform: translate(92px,0);
+          background: linear-gradient(90deg, rgba(255,255,255,0), rgba(220,200,255,.9), rgba(255,255,255,0));
+          filter: blur(3px); opacity:0; mix-blend-mode:screen;
+          animation: txStreakMove .7s cubic-bezier(.3,0,.2,1) 6.2s forwards;
+        }
+        @keyframes txStreakMove{
+          0%{ opacity:1; transform: translate(92px,0); }
+          92%{ opacity:1; }
+          100%{ opacity:0; transform: translate(310px,0); }
+        }
+
+        /* ================= LOGIN CARD ================= */
         .lg-card{
-          position:relative; z-index:5; width:380px; max-width:calc(100vw - 40px);
+          position:fixed; left:50%; z-index:21; width:380px; max-width:calc(100vw - 40px);
+          transform: translateX(-50%);
+          top: calc(16vh + 62px);
           background: rgba(11,12,20,.82);
           border:1px solid rgba(255,255,255,.08);
           border-radius:16px;
-          padding:40px 36px 28px;
+          padding:26px 36px 28px;
           backdrop-filter: blur(14px);
           box-shadow:
             0 0 0 1px rgba(157,108,255,.06),
             0 24px 70px rgba(0,0,0,.55),
             0 0 90px rgba(139,92,246,.08);
         }
-        /* hidden but laid out — the flying logo measures its brand rects */
-        .lg-card-hidden{ opacity:0; pointer-events:none; }
-        .lg-card-open{ animation: lgCardIn .55s cubic-bezier(.3,0,.2,1) both; }
-        @keyframes lgCardIn{
-          from{ opacity:0; transform:scale(.965); box-shadow:0 0 0 1px rgba(157,108,255,.35), 0 0 120px rgba(139,92,246,.25); }
-          to{ opacity:1; transform:scale(1); }
+        .lg-card-anim{
+          opacity:0; transform: translateX(-50%) translateY(10px) scale(.97);
+          animation: lgCardIn .6s cubic-bezier(.3,0,.2,1) 7.7s forwards;
         }
-        /* fields cascade open after the portal forms */
-        .lg-card-open .lg-cascade{
+        @keyframes lgCardIn{
+          to{ opacity:1; transform: translateX(-50%) translateY(0) scale(1); }
+        }
+        .lg-card-settled{ opacity:1; }
+
+        .lg-card-anim .lg-cascade{
           opacity:0;
           animation: lgRise .45s cubic-bezier(.3,0,.2,1) forwards;
-          animation-delay: calc(.18s + var(--i) * .07s);
+          animation-delay: calc(7.9s + var(--i) * .07s);
         }
         @keyframes lgRise{ from{ opacity:0; transform:translateY(9px); } to{ opacity:1; transform:none; } }
 
-        .lg-brand{ display:flex; align-items:center; justify-content:center; gap:11px; }
-        .lg-icon{ width:40px; height:40px; object-fit:contain;
-          filter: drop-shadow(0 0 10px rgba(157,108,255,.45)); }
-        .lg-wordmark{ width:128px; display:block; }
-        /* brand fades in as the flying logo lands on it */
-        .lg-card-hidden .lg-brand{ opacity:0; }
-        .lg-card-open .lg-brand{ opacity:1; transition:opacity .25s ease; }
-
         .lg-tagline{
-          margin:10px 0 28px; text-align:center;
+          margin:0 0 24px; text-align:center;
           font-size:11px; letter-spacing:.28em; text-transform:uppercase;
           color:#8b8d9e;
         }
@@ -395,19 +448,23 @@ export default function Login() {
         }
         @keyframes lgSpin{ to{ transform:rotate(360deg); } }
         .lg-footnote{ margin:22px 0 0; text-align:center; font-size:11px; color:#6b6d7e; }
-        .lg-credit{
-          position:absolute; bottom:26px; left:0; right:0; text-align:center;
-          font-size:11px; color:#4c4e5e; letter-spacing:.06em; opacity:0;
-        }
-        .lg-credit-show{ opacity:1; transition:opacity .6s ease .5s; }
 
-        /* ================= THE CONTINUOUS SHOT ================= */
-        .tx-scene{ position:fixed; inset:0; z-index:10; background:#05060A; }
-        .tx-scene-dim{ animation: txSceneFadeOut .7s ease .1s forwards; }
+        .lg-credit{
+          position:fixed; bottom:26px; left:0; right:0; z-index:5; text-align:center;
+          font-size:11px; color:#4c4e5e; letter-spacing:.06em; opacity:1;
+        }
+        .lg-credit.lg-cascade{ opacity:0; animation: lgRise .5s ease forwards; animation-delay: calc(7.9s + var(--i) * .07s); }
+
+        /* ================= SPACE CINEMATIC (mounts only during intro) ================= */
+        .tx-scene{
+          position:fixed; inset:0; z-index:10; background:#05060A;
+          animation: txSceneFadeOut .6s ease 8.0s forwards;
+        }
         @keyframes txSceneFadeOut{ to{ opacity:0; pointer-events:none; } }
 
         .tx-starfield{ position:absolute; inset:0; opacity:0; animation: txFadeIn .6s ease forwards; }
-        @keyframes txFadeIn{ to{ opacity:1; } }
+        .tx-scene .tx-star{ position:absolute; background:#fff; border-radius:50%; opacity:.5;
+          animation: txTwinkle 3.4s ease-in-out infinite; }
 
         .tx-earth{
           position:absolute; left:50%; top:78vh; width:260vw; height:260vw; margin-left:-130vw;
@@ -515,78 +572,6 @@ export default function Login() {
           0%{ transform:scale(1); opacity:1; }
           60%{ transform:scale(3.4); opacity:.55; filter:blur(8px); }
           100%{ transform:scale(5.2); opacity:0; filter:blur(14px); }
-        }
-
-        /* THE OFFICIAL LOGO — born from the light at 4.55s */
-        .tx-logo-icon{
-          position:fixed; left:50%; top:45vh; width:150px; height:150px; z-index:20;
-          margin-left:-75px; margin-top:-75px;
-          opacity:0; transform:scale(1.5); filter:blur(14px);
-          animation:
-            txLogoBirth .75s cubic-bezier(.4,0,.2,1) 4.55s forwards,
-            txLogoPulse 2.6s ease-in-out 6.2s infinite;
-        }
-        @keyframes txLogoBirth{
-          0%{ opacity:0; transform:scale(1.5); filter:blur(14px); }
-          35%{ opacity:.6; }
-          100%{ opacity:1; transform:scale(1); filter:blur(0px); }
-        }
-        @keyframes txLogoPulse{
-          0%,100%{ filter: drop-shadow(0 0 7px rgba(157,108,255,.4)); }
-          50%{ filter: drop-shadow(0 0 15px rgba(157,108,255,.7)); }
-        }
-        .tx-logo-icon img{ width:100%; height:100%; object-fit:contain; display:block; }
-
-        /* travel INTO the card's brand position (vars set at runtime) */
-        .tx-logo-icon.tx-fly{
-          animation: txIconToCard .8s cubic-bezier(.4,0,.2,1) forwards;
-        }
-        @keyframes txIconToCard{
-          to{ transform: translate(var(--tx,0), var(--ty,0)) scale(var(--ts,.27)); opacity:0; }
-        }
-
-        .tx-star-glint{ position:absolute; width:10px; height:10px; opacity:0; mix-blend-mode:screen;
-          background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(200,170,255,.7) 40%, rgba(157,108,255,0) 75%);
-          border-radius:50%; filter: blur(.5px);
-          animation: txGlintPop .3s ease forwards, txGlintTwinkle 1.7s ease-in-out infinite; }
-        .tx-star-glint.tx-g1{ left:76%; top:27%; animation-delay:5.25s, 5.55s; }
-        .tx-star-glint.tx-g2{ left:87%; top:45%; width:7px; height:7px; animation-delay:5.45s, 5.75s; }
-        @keyframes txGlintPop{ 0%{ opacity:0; transform:scale(0);} 100%{ opacity:1; transform:scale(1);} }
-        @keyframes txGlintTwinkle{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
-
-        /* THREXA — projected from the logo's right side at 6.2s */
-        .tx-wordmark{
-          position:fixed; left:50%; top:45vh; z-index:20; width:220px;
-          transform: translateY(-50%) translate(92px, 0);
-          clip-path: inset(0 100% 0 0); opacity:0;
-          animation: txWordProject .7s cubic-bezier(.3,0,.2,1) 6.2s forwards;
-        }
-        @keyframes txWordProject{
-          0%{ clip-path: inset(0 100% 0 0); opacity:.9; }
-          100%{ clip-path: inset(0 0% 0 0); opacity:1; }
-        }
-        .tx-wordmark.tx-fly{
-          animation: txWordToCard .8s cubic-bezier(.4,0,.2,1) forwards;
-        }
-        @keyframes txWordToCard{
-          0%{ clip-path: inset(0 0% 0 0); opacity:1; }
-          100%{ clip-path: inset(0 0% 0 0);
-            transform: translateY(-50%) translate(calc(92px + var(--tx,0px)), var(--ty,0px));
-            width: var(--tw,128px); opacity:0; }
-        }
-        .tx-wordmark img{ width:100%; display:block; }
-
-        .tx-word-streak{
-          position:fixed; left:50%; top:45vh; z-index:21; width:14px; height:34px; margin-top:-17px;
-          transform: translate(92px,0);
-          background: linear-gradient(90deg, rgba(255,255,255,0), rgba(220,200,255,.9), rgba(255,255,255,0));
-          filter: blur(3px); opacity:0; mix-blend-mode:screen;
-          animation: txStreakMove .7s cubic-bezier(.3,0,.2,1) 6.2s forwards;
-        }
-        @keyframes txStreakMove{
-          0%{ opacity:1; transform: translate(92px,0); }
-          92%{ opacity:1; }
-          100%{ opacity:0; transform: translate(310px,0); }
         }
 
         .tx-skip{
