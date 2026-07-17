@@ -17,8 +17,6 @@ import threxaWordmark from "../assets/threxa-wordmark.png";
    9  One continuous camera shot. No cuts. No pauses.
 ───────────────────────────────────────────────────────────────────── */
 
-const INTRO_KEY = "threxa_cinematic_seen";
-
 /* deterministic city lights */
 function makeLights() {
   let s = 20260717;
@@ -43,8 +41,9 @@ export default function Login() {
   const [busy,     setBusy    ] = useState(false);
 
   const [playIntro, setPlayIntro] = useState(() => {
-    const p = new URLSearchParams(window.location.search);
-    return p.get("intro") === "1" || !localStorage.getItem(INTRO_KEY);
+    /* ALWAYS play the cinematic on mount.
+       Only skip if OS has reduce-motion enabled. */
+    return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   });
 
   const canvasRef  = useRef<HTMLCanvasElement>(null);
@@ -110,14 +109,14 @@ export default function Login() {
   useEffect(() => {
     if (!playIntro) return;
     cleanupRef.current = window.setTimeout(() => {
-      localStorage.setItem(INTRO_KEY, "1"); setPlayIntro(false);
+      setPlayIntro(false);
     }, 8400);
     return () => { if (cleanupRef.current) clearTimeout(cleanupRef.current); };
   }, [playIntro]);
 
   const skip = () => {
     if (cleanupRef.current) clearTimeout(cleanupRef.current);
-    localStorage.setItem(INTRO_KEY, "1"); setPlayIntro(false);
+    setPlayIntro(false);
   };
 
   const signIn = async () => {
