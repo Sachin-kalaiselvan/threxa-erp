@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   BarChart3, TrendingUp, ShoppingCart, FolderKanban, Workflow, Bot,
   Search, ArrowUpRight, ArrowDownRight, AlertCircle, PackageSearch,
-  UserPlus, ChevronDown, Factory, Package,
+  UserPlus, ChevronDown, Factory, Package, Sparkles, Bell, Settings,
 } from "lucide-react";
 
 /* ─────────────────────────────────────────────────────────────
@@ -157,13 +157,13 @@ export default function Dashboard() {
   /* ── COMMAND CENTRE ── */
   const command = (
     <>
-      {/* KPI row */}
+      {/* KPI row — mirrors reference */}
       <div className="grid grid-cols-5 gap-4">
         <KPI icon={BarChart3} label="Revenue" value="₹4.2 Cr" delta="+14.3%" />
-        <KPI icon={ShoppingCart} label="Orders" value="127" delta="+8.2%" />
-        <KPI icon={FolderKanban} label="Work Orders" value="18" delta="+12.5%" />
-        <KPI icon={Workflow} label="Dispatches" value="42" delta="+5.1%" />
-        <KPI icon={Bot} label="Outstanding" value="₹19.6L" delta="-3.2%" up={false} />
+        <KPI icon={ShoppingCart} label="Sales" value="127" delta="+8.2%" />
+        <KPI icon={FolderKanban} label="Projects" value="18" delta="+12.5%" />
+        <KPI icon={Workflow} label="Automation" value="42 Active" delta="+5.1%" />
+        <KPI icon={Bot} label="AI Agents" value="7 Running" delta="+3" />
       </div>
 
       {/* Revenue + Insights */}
@@ -185,7 +185,7 @@ export default function Dashboard() {
 
         <Panel className="p-5">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-semibold" style={{ color: T.text }}>Insights</h3>
+            <h3 className="text-sm font-semibold" style={{ color: T.text }}>AI Insights</h3>
             <button className="text-xs" style={{ color: T.accent }}>View all</button>
           </div>
           <Insight icon={TrendingUp} tint="#34D399"
@@ -204,13 +204,19 @@ export default function Dashboard() {
         <Panel className="p-5">
           <h3 className="text-sm font-semibold mb-3" style={{ color: T.text }}>Top Products</h3>
           {[
-            ["5 Ply Boxes", "₹88,900", "+8.3%"],
-            ["3 Ply Boxes", "₹83,000", "+6.2%"],
-            ["Custom Packaging", "₹68,900", "+9.3%"],
+            ["Product A", "₹88,900", "+8.3%"],
+            ["Product B", "₹83,000", "+6.2%"],
+            ["Product C", "₹68,900", "+9.3%"],
           ].map(([n, v, d]) => (
             <div key={n} className="flex items-center justify-between py-2.5 border-b last:border-0"
               style={{ borderColor: "rgba(255,255,255,0.05)" }}>
-              <span className="text-sm" style={{ color: T.text }}>{n}</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-md flex items-center justify-center"
+                  style={{ background: "rgba(139,92,246,0.14)" }}>
+                  <Package size={13} color={T.accent} />
+                </div>
+                <span className="text-sm" style={{ color: T.text }}>{n}</span>
+              </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm font-semibold" style={{ color: T.text }}>{v}</span>
                 <span className="text-xs font-medium" style={{ color: "#34D399" }}>{d}</span>
@@ -238,16 +244,22 @@ export default function Dashboard() {
         </Panel>
 
         <Panel className="p-5">
-          <h3 className="text-sm font-semibold mb-3" style={{ color: T.text }}>Dispatch Activity</h3>
+          <h3 className="text-sm font-semibold mb-3" style={{ color: T.text }}>AI Agent Activity</h3>
           {([
-            ["CH-4807 · Ramesh Traders", "Dispatched", "ok"],
-            ["CH-4808 · Global Foods", "In Transit", "info"],
-            ["CH-4809 · FreshMart", "Pending", "warn"],
-          ] as const).map(([n, s, tone]) => (
+            ["Lead Qualification", "Active"],
+            ["Invoice Processing", "Active"],
+            ["Payment Reconciliation", "Active"],
+          ] as const).map(([n, s]) => (
             <div key={n} className="flex items-center justify-between py-2.5 border-b last:border-0"
               style={{ borderColor: "rgba(255,255,255,0.05)" }}>
-              <span className="text-sm" style={{ color: T.text }}>{n}</span>
-              <Pill label={s} tone={tone} />
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-md flex items-center justify-center"
+                  style={{ background: "rgba(139,92,246,0.14)" }}>
+                  <Bot size={13} color={T.accent} />
+                </div>
+                <span className="text-sm" style={{ color: T.text }}>{n}</span>
+              </div>
+              <Pill label={s} tone="ok" />
             </div>
           ))}
         </Panel>
@@ -386,9 +398,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-full" style={{ background: T.bg }}>
-      {/* ── Greeting + search bar ── */}
-      <div className="px-8 pt-6 pb-2 flex items-center justify-between gap-6">
-        <div>
+      {/* ── Greeting · Ask-Threxa search · AI status ── */}
+      <div className="px-8 pt-6 pb-2 flex items-center gap-6">
+        <div className="shrink-0">
           <h1 className="text-xl font-bold" style={{ color: T.text }}>
             {greeting}, Sachin <span className="align-middle">👋</span>
           </h1>
@@ -396,14 +408,45 @@ export default function Dashboard() {
             Your business is performing well today.
           </p>
         </div>
-        <div className="flex-1 max-w-md relative">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2"
-            color={T.dim} />
+
+        <div className="flex-1 max-w-md relative mx-auto">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2" color={T.dim} />
           <input
-            placeholder="Search anything…"
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none"
+            placeholder="Ask Threxa anything…"
+            className="w-full pl-10 pr-14 py-2.5 rounded-xl text-sm outline-none"
             style={{ background: T.panel, border: T.border, color: T.text }}
           />
+          <span
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] px-1.5 py-0.5 rounded"
+            style={{ background: T.panel2, color: T.dim, border: T.border }}
+          >
+            ⌘K
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="text-right leading-tight">
+            <div className="flex items-center gap-1.5 justify-end">
+              <Sparkles size={13} color={T.accent} />
+              <span className="text-xs font-semibold" style={{ color: T.text }}>THREXA AI</span>
+            </div>
+            <div className="flex items-center gap-1.5 justify-end mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#34D399" }} />
+              <span className="text-[11px]" style={{ color: T.dim }}>Online</span>
+            </div>
+          </div>
+          <button className="p-2 rounded-lg hover:bg-white/5 transition">
+            <Bell size={16} color={T.dim} />
+          </button>
+          <button className="p-2 rounded-lg hover:bg-white/5 transition">
+            <Settings size={16} color={T.dim} />
+          </button>
+          <button
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white"
+            style={{ background: "linear-gradient(90deg,#6D5CFF,#8B5CF6)" }}
+          >
+            <Sparkles size={13} /> Ask AI
+          </button>
         </div>
       </div>
 
