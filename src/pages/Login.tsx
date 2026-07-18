@@ -22,9 +22,9 @@ function makeLights() {
   let s = 20260717;
   const r = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 0xffffffff; };
   return [
-    [152,72,14,22,10],[128,52, 9,18, 8],[ 88,68, 7,14, 8],
-    [464,32,16,30,13],[516,62, 7,14, 8],[586,70,11,18,11],
-    [680,48,18,26,15],[725,48, 8,13,10],[672,84, 7,13, 8],
+    [152,72, 7,22,10],[128,52, 5,18, 8],[ 88,68, 4,14, 8],
+    [464,32, 8,30,13],[516,62, 4,14, 8],[586,70, 6,18,11],
+    [680,48, 9,26,15],[725,48, 4,13,10],[672,84, 4,13, 8],
   ].flatMap(([cx,cy,n,sx,sy]) =>
     Array.from({length:n}, () => ({
       cx:cx+(r()-.5)*sx*2, cy:cy+(r()-.5)*sy*2,
@@ -59,7 +59,7 @@ export default function Login() {
 
     let rs = 99991;
     const rng = () => { rs = (rs * 1664525 + 1013904223) >>> 0; return rs / 0xffffffff; };
-    const stars = Array.from({ length: 200 }, () => ({
+    const stars = Array.from({ length: 90 }, () => ({
       x: rng(), y: rng() * .78, r: rng() * 1.4 + .3,
       ph: rng() * Math.PI * 2, sp: rng() * .4 + .12,
     }));
@@ -69,8 +69,13 @@ export default function Login() {
 
     let frame: number;
     const t0 = Date.now();
+    let last = 0;
     const draw = () => {
-      const el = (Date.now() - t0) / 1000;
+      frame = requestAnimationFrame(draw);
+      const now = Date.now();
+      if (now - last < 33) return; /* cap ~30fps — stars don't need 60 */
+      last = now;
+      const el = (now - t0) / 1000;
       ctx.clearRect(0, 0, cv.width, cv.height);
 
       /* stars: fade in 0–0.8s, fade out 5.0–6.0s */
@@ -99,7 +104,6 @@ export default function Login() {
         });
       }
 
-      frame = requestAnimationFrame(draw);
     };
     draw();
     return () => { cancelAnimationFrame(frame); window.removeEventListener("resize", resize); };
@@ -213,9 +217,9 @@ export default function Login() {
             <div className="tx-earth">
               <svg className="tx-geo" viewBox="0 0 800 150" preserveAspectRatio="none">
                 <defs>
-                  <filter id="landBlur"><feGaussianBlur stdDeviation="2.2"/></filter>
-                  <filter id="cg" x="-60%" y="-60%" width="220%" height="220%">
-                    <feGaussianBlur stdDeviation="1.8" result="b"/>
+                  <filter id="landBlur"><feGaussianBlur stdDeviation="1.4"/></filter>
+                  <filter id="cg" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="1.1" result="b"/>
                     <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
                   </filter>
                   <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
@@ -619,7 +623,9 @@ export default function Login() {
             0 -30px 120px rgba(60,100,230,.15),
             inset 0 6px 70px rgba(80,140,255,.18);
           opacity:0;
-          will-change:opacity;
+          will-change:opacity,transform;
+          transform:translateZ(0);           /* own GPU layer — SVG blurs rasterize ONCE,
+                                                camera transform then moves cached texture */
           animation:txFadeIn .6s ease .6s forwards, txEarthGone 1.0s ease 5.0s forwards;
         }
         /* Earth MUST be COMPLETELY GONE before login appears (rule 2+4) */
@@ -635,8 +641,9 @@ export default function Login() {
         .tx-trail{
           position:absolute; left:50%; top:78vh; width:260vw; height:260vw;
           margin-left:-130vw; border-radius:50%;
-          box-shadow:0 -1px 0 rgba(157,108,255,.9),0 -4px 16px rgba(139,92,246,.45);
+          box-shadow:0 -1px 0 rgba(157,108,255,.9),0 -4px 12px rgba(139,92,246,.45);
           clip-path:inset(-40px 100% 90% 0); opacity:0;
+          will-change:clip-path,opacity; transform:translateZ(0);
           animation:txTrailGrow 2s cubic-bezier(.45,0,.25,1) 1.0s forwards,
                     txTrailFade .4s ease 3.2s forwards;
         }
@@ -651,8 +658,9 @@ export default function Login() {
         .tx-flash{
           position:absolute; left:50%; top:78vh; width:260vw; height:260vw;
           margin-left:-130vw; border-radius:50%;
-          box-shadow:0 -3px 34px rgba(200,190,255,.6),0 -14px 110px rgba(140,150,255,.38);
-          opacity:0; animation:txFlashPop .35s ease 3.18s 1;
+          box-shadow:0 -3px 30px rgba(200,190,255,.6),0 -14px 64px rgba(140,150,255,.38);
+          opacity:0; will-change:opacity; transform:translateZ(0);
+          animation:txFlashPop .35s ease 3.18s 1;
         }
         @keyframes txFlashPop{0%{opacity:0;}40%{opacity:1;}100%{opacity:0;}}
 
