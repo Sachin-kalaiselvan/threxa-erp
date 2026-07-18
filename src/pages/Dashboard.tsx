@@ -1,665 +1,436 @@
-import React, { useState } from "react";
-import { BarChart3, Factory, Package, TrendingUp } from "lucide-react";
+import { useState } from "react";
+import {
+  BarChart3, TrendingUp, ShoppingCart, FolderKanban, Workflow, Bot,
+  Search, ArrowUpRight, ArrowDownRight, AlertCircle, PackageSearch,
+  UserPlus, ChevronDown, Factory, Package,
+} from "lucide-react";
 
-// ==================== CHART COMPONENTS ====================
+/* ─────────────────────────────────────────────────────────────
+   THREXA DARK THEME TOKENS
+   bg      #0B0C14   panel #12131D   panel-2 #171826
+   border  rgba(255,255,255,.06)
+   accent  #8B5CF6 → #6D5CFF gradient
+   ───────────────────────────────────────────────────────────── */
 
-function LineChart({
-  title,
-  data,
-}: {
-  title: string;
-  data: Array<{ label: string; value: number }>;
-}) {
-  if (!data || data.length === 0) {
-    return (
-      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-        <p className="text-gray-600 font-semibold">{title}</p>
-        <p className="text-gray-400 text-sm mt-4">No data available</p>
-      </div>
-    );
-  }
+const T = {
+  bg: "#0B0C14",
+  panel: "#12131D",
+  panel2: "#171826",
+  border: "1px solid rgba(255,255,255,0.06)",
+  text: "#E7E8F0",
+  dim: "#8A8CA3",
+  accent: "#8B5CF6",
+};
 
-  const maxValue = Math.max(...data.map((d) => d.value));
-  const minValue = Math.min(...data.map((d) => d.value));
-  const range = maxValue - minValue || 1;
-
+function Panel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-      <h3 className="text-sm font-semibold text-gray-900 mb-6">{title}</h3>
-      <svg viewBox="0 0 600 200" className="w-full">
-        {/* Grid */}
-        {[0, 1, 2, 3, 4].map((i) => (
-          <line
-            key={`grid-${i}`}
-            x1="40"
-            y1={40 + (i * 120) / 4}
-            x2="580"
-            y2={40 + (i * 120) / 4}
-            stroke="#f3f4f6"
-            strokeWidth="1"
-          />
-        ))}
-
-        {/* Axes */}
-        <line x1="40" y1="160" x2="580" y2="160" stroke="#d1d5db" strokeWidth="1.5" />
-        <line x1="40" y1="40" x2="40" y2="160" stroke="#d1d5db" strokeWidth="1.5" />
-
-        {/* Line path */}
-        <polyline
-          points={data
-            .map((point, idx) => {
-              const x = 40 + (idx * 540) / (data.length - 1 || 1);
-              const y = 160 - ((point.value - minValue) / range) * 120;
-              return `${x},${y}`;
-            })
-            .join(" ")}
-          fill="none"
-          stroke="#3b82f6"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Points */}
-        {data.map((point, idx) => {
-          const x = 40 + (idx * 540) / (data.length - 1 || 1);
-          const y = 160 - ((point.value - minValue) / range) * 120;
-          return (
-            <circle
-              key={`point-${idx}`}
-              cx={x}
-              cy={y}
-              r="3"
-              fill="#3b82f6"
-              stroke="#fff"
-              strokeWidth="1"
-            />
-          );
-        })}
-
-        {/* Labels */}
-        {data.map((point, idx) => {
-          const x = 40 + (idx * 540) / (data.length - 1 || 1);
-          return (
-            <text
-              key={`label-${idx}`}
-              x={x}
-              y="180"
-              textAnchor="middle"
-              fontSize="12"
-              fill="#9ca3af"
-            >
-              {point.label}
-            </text>
-          );
-        })}
-      </svg>
+    <div
+      className={`rounded-xl ${className}`}
+      style={{ background: T.panel, border: T.border }}
+    >
+      {children}
     </div>
   );
 }
 
-function BarChart({
-  title,
-  data,
+/* ── KPI card: icon square + label + value + delta ─────────── */
+function KPI({
+  icon: Icon, label, value, delta, up = true,
 }: {
-  title: string;
-  data: Array<{ label: string; value: number; color?: string }>;
-}) {
-  if (!data || data.length === 0) {
-    return (
-      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-        <p className="text-gray-600 font-semibold">{title}</p>
-      </div>
-    );
-  }
-
-  const maxValue = Math.max(...data.map((d) => d.value));
-
-  return (
-    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-      <h3 className="text-sm font-semibold text-gray-900 mb-6">{title}</h3>
-      <svg viewBox="0 0 600 200" className="w-full">
-        {/* Grid */}
-        {[0, 1, 2, 3, 4].map((i) => (
-          <line
-            key={`grid-${i}`}
-            x1="40"
-            y1={40 + (i * 120) / 4}
-            x2="580"
-            y2={40 + (i * 120) / 4}
-            stroke="#f3f4f6"
-            strokeWidth="1"
-          />
-        ))}
-
-        {/* Axes */}
-        <line x1="40" y1="160" x2="580" y2="160" stroke="#d1d5db" strokeWidth="1.5" />
-        <line x1="40" y1="40" x2="40" y2="160" stroke="#d1d5db" strokeWidth="1.5" />
-
-        {/* Bars */}
-        {data.map((bar, idx) => {
-          const barWidth = 520 / data.length;
-          const barX = 50 + idx * barWidth;
-          const barHeight = (bar.value / maxValue) * 120;
-          const barY = 160 - barHeight;
-          const color = bar.color || "#3b82f6";
-
-          return (
-            <g key={`bar-${idx}`}>
-              <rect
-                x={barX}
-                y={barY}
-                width={barWidth - 16}
-                height={barHeight}
-                fill={color}
-                rx="6"
-                opacity="0.9"
-              />
-              <text
-                x={barX + (barWidth - 16) / 2}
-                y="180"
-                textAnchor="middle"
-                fontSize="12"
-                fill="#9ca3af"
-              >
-                {bar.label}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
-function DonutChart({
-  title,
-  data,
-}: {
-  title: string;
-  data: Array<{ label: string; value: number; color: string }>;
-}) {
-  if (!data || data.length === 0) {
-    return (
-      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm h-80 flex items-center justify-center">
-        <p className="text-gray-400">No data</p>
-      </div>
-    );
-  }
-
-  const total = data.reduce((sum, d) => sum + d.value, 0);
-
-  return (
-    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-      <h3 className="text-sm font-semibold text-gray-900 mb-6">{title}</h3>
-      <div className="flex items-center justify-between">
-        <svg viewBox="0 0 160 160" className="w-32 h-32">
-          {data.map((item, idx) => {
-            let currentAngle = data
-              .slice(0, idx)
-              .reduce((sum, d) => sum + (d.value / total) * 360, 0);
-            const sliceAngle = (item.value / total) * 360;
-            const startRad = (currentAngle * Math.PI) / 180;
-            const endRad = ((currentAngle + sliceAngle) * Math.PI) / 180;
-
-            const x1 = 80 + 55 * Math.cos(startRad);
-            const y1 = 80 + 55 * Math.sin(startRad);
-            const x2 = 80 + 55 * Math.cos(endRad);
-            const y2 = 80 + 55 * Math.sin(endRad);
-
-            const largeArc = sliceAngle > 180 ? 1 : 0;
-            const path = `M 80 80 L ${x1} ${y1} A 55 55 0 ${largeArc} 1 ${x2} ${y2} Z`;
-
-            return (
-              <path
-                key={`slice-${idx}`}
-                d={path}
-                fill={item.color}
-                stroke="white"
-                strokeWidth="2"
-              />
-            );
-          })}
-          <circle cx="80" cy="80" r="30" fill="white" />
-          <text
-            x="80"
-            y="85"
-            textAnchor="middle"
-            fontSize="16"
-            fontWeight="bold"
-            fill="#1f2937"
-          >
-            {total}
-          </text>
-        </svg>
-
-        <div className="space-y-3">
-          {data.map((item, idx) => (
-            <div key={`legend-${idx}`} className="flex items-center gap-3">
-              <div
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: item.color }}
-              />
-              <span className="text-xs text-gray-600">{item.label}</span>
-              <span className="text-xs font-semibold text-gray-900 ml-auto">
-                {((item.value / total) * 100).toFixed(0)}%
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function GanttChart({
-  title,
-  tasks,
-}: {
-  title: string;
-  tasks: Array<{ id: string; name: string; start: number; duration: number; color?: string }>;
+  icon: any; label: string; value: string; delta: string; up?: boolean;
 }) {
   return (
-    <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-      <h3 className="text-sm font-semibold text-gray-900 mb-6">{title}</h3>
-      <div className="space-y-4">
-        {tasks.map((task) => (
-          <div key={task.id} className="flex items-center gap-4">
-            <div className="w-40 text-xs text-gray-700 font-medium truncate">
-              {task.name}
-            </div>
-            <div className="flex-1 h-6 bg-gray-100 rounded-full relative overflow-hidden">
-              <div
-                className="h-full rounded-full shadow-sm"
-                style={{
-                  marginLeft: `${task.start}%`,
-                  width: `${task.duration}%`,
-                  backgroundColor: task.color || "#3b82f6",
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DataTable({
-  title,
-  columns,
-  rows,
-}: {
-  title: string;
-  columns: Array<{ key: string; label: string }>;
-  rows: Array<Record<string, any>>;
-}) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-gray-100">
-        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gray-50">
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className="px-6 py-3 text-xs font-semibold text-gray-700 text-left"
-                >
-                  {col.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, idx) => (
-              <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                {columns.map((col) => (
-                  <td key={`${idx}-${col.key}`} className="px-6 py-4 text-sm text-gray-700">
-                    {row[col.key]}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function KPICard({
-  title,
-  value,
-  change,
-  bgColor = "bg-blue-50",
-}: {
-  title: string;
-  value: string | number;
-  change: number;
-  bgColor?: string;
-}) {
-  return (
-    <div className={`${bgColor} rounded-xl p-5 border border-gray-100 shadow-sm`}>
-      <p className="text-xs text-gray-600 font-medium uppercase tracking-wide">{title}</p>
-      <p className="text-2xl font-bold text-gray-900 mt-3">{value}</p>
-      <div className="flex items-center gap-1.5 mt-3">
-        <span
-          className={`text-xs font-semibold ${
-            change >= 0 ? "text-green-600" : "text-red-600"
-          }`}
+    <Panel className="p-4 flex flex-col gap-3">
+      <div className="flex items-center gap-2.5">
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ background: "rgba(139,92,246,0.14)" }}
         >
-          {change >= 0 ? "↑" : "↓"} {Math.abs(change)}%
-        </span>
-        <span className="text-xs text-gray-500">vs Yesterday</span>
+          <Icon size={16} color={T.accent} />
+        </div>
+        <span className="text-xs" style={{ color: T.dim }}>{label}</span>
+      </div>
+      <div className="text-xl font-bold" style={{ color: T.text }}>{value}</div>
+      <div className="flex items-center gap-1 text-xs font-medium"
+        style={{ color: up ? "#34D399" : "#F87171" }}>
+        {up ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
+        {delta}
+      </div>
+    </Panel>
+  );
+}
+
+/* ── Revenue line chart (purple, dark grid) ────────────────── */
+function RevenueChart() {
+  const data = [1.2, 2.1, 2.6, 3.0, 2.8, 2.9, 2.85, 3.1, 4.6];
+  const labels = ["Oct 9", "Oct 10", "Oct 11", "Oct 12", "Oct 13", "Oct 14", "Oct 15"];
+  const max = 5;
+  const W = 760, H = 220, PX = 44, PY = 16;
+  const pts = data.map((v, i) => [
+    PX + (i * (W - PX - 16)) / (data.length - 1),
+    H - PY - (v / max) * (H - PY * 2.4),
+  ]);
+  const path = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0]},${p[1]}`).join(" ");
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H + 26}`} className="w-full">
+      {[0, 1, 2, 3, 4, 5].map((v) => {
+        const y = H - PY - (v / max) * (H - PY * 2.4);
+        return (
+          <g key={v}>
+            <line x1={PX} y1={y} x2={W - 12} y2={y}
+              stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+            <text x={PX - 10} y={y + 4} textAnchor="end" fontSize="11" fill={T.dim}>
+              {v === 0 ? "0" : `${v}L`}
+            </text>
+          </g>
+        );
+      })}
+      <defs>
+        <linearGradient id="rvFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(139,92,246,0.22)" />
+          <stop offset="100%" stopColor="rgba(139,92,246,0)" />
+        </linearGradient>
+      </defs>
+      <path d={`${path} L${pts[pts.length - 1][0]},${H - PY} L${pts[0][0]},${H - PY} Z`}
+        fill="url(#rvFill)" />
+      <path d={path} fill="none" stroke={T.accent} strokeWidth="2.5"
+        strokeLinecap="round" strokeLinejoin="round" />
+      {pts.map((p, i) => (
+        <circle key={i} cx={p[0]} cy={p[1]} r={i === pts.length - 1 ? 5 : 3}
+          fill={i === pts.length - 1 ? "#fff" : T.accent}
+          stroke={T.accent} strokeWidth="2" />
+      ))}
+      {labels.map((l, i) => (
+        <text key={l} x={PX + (i * (W - PX - 16)) / (labels.length - 1)} y={H + 18}
+          textAnchor="middle" fontSize="11" fill={T.dim}>{l}</text>
+      ))}
+    </svg>
+  );
+}
+
+/* ── AI-style insight row ──────────────────────────────────── */
+function Insight({
+  icon: Icon, tint, title, sub,
+}: { icon: any; tint: string; title: string; sub: string }) {
+  return (
+    <div className="flex items-start gap-3 py-3 border-b last:border-0"
+      style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+        style={{ background: `${tint}22` }}>
+        <Icon size={14} color={tint} />
+      </div>
+      <div>
+        <p className="text-sm font-medium" style={{ color: T.text }}>{title}</p>
+        <p className="text-xs mt-0.5" style={{ color: T.dim }}>{sub}</p>
       </div>
     </div>
   );
 }
 
-// ==================== MAIN DASHBOARD ====================
+/* ── Status pill ───────────────────────────────────────────── */
+function Pill({ label, tone }: { label: string; tone: "ok" | "warn" | "info" }) {
+  const c = tone === "ok" ? "#34D399" : tone === "warn" ? "#FBBF24" : "#60A5FA";
+  return (
+    <span className="text-[11px] font-semibold px-2 py-0.5 rounded"
+      style={{ background: `${c}1e`, color: c }}>
+      {label}
+    </span>
+  );
+}
+
+/* ═══════════════════════ DASHBOARD ═══════════════════════ */
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<
-    "command" | "production" | "inventory" | "analytics"
-  >("command");
+  const [tab, setTab] = useState<"command" | "production" | "inventory" | "analytics">("command");
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
 
   const tabs = [
     { id: "command", label: "Command Centre", icon: BarChart3 },
-    { id: "production", label: "Production Control", icon: Factory },
+    { id: "production", label: "Production", icon: Factory },
     { id: "inventory", label: "Inventory", icon: Package },
     { id: "analytics", label: "Analytics", icon: TrendingUp },
-  ];
+  ] as const;
 
-  // ==================== COMMAND CENTRE TAB ====================
-  const commandContent = (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Top KPI Row */}
+  /* ── COMMAND CENTRE ── */
+  const command = (
+    <>
+      {/* KPI row */}
       <div className="grid grid-cols-5 gap-4">
-        <KPICard
-          title="Today's Revenue"
-          value="₹8,74,500"
-          change={10.5}
-          bgColor="bg-emerald-50"
-        />
-        <KPICard title="Total Orders" value="24" change={9.08} bgColor="bg-blue-50" />
-        <KPICard
-          title="Production Status"
-          value="18"
-          change={0}
-          bgColor="bg-amber-50"
-        />
-        <KPICard title="Dispatched Today" value="12" change={5} bgColor="bg-sky-50" />
-        <KPICard
-          title="Outstanding Payments"
-          value="₹19,63,250"
-          change={13.38}
-          bgColor="bg-rose-50"
-        />
+        <KPI icon={BarChart3} label="Revenue" value="₹4.2 Cr" delta="+14.3%" />
+        <KPI icon={ShoppingCart} label="Orders" value="127" delta="+8.2%" />
+        <KPI icon={FolderKanban} label="Work Orders" value="18" delta="+12.5%" />
+        <KPI icon={Workflow} label="Dispatches" value="42" delta="+5.1%" />
+        <KPI icon={Bot} label="Outstanding" value="₹19.6L" delta="-3.2%" up={false} />
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-2 gap-6">
-        <LineChart
-          title="Production Timeline (Live)"
-          data={[
-            { label: "09:00", value: 4500 },
-            { label: "11:00", value: 5200 },
-            { label: "13:00", value: 4800 },
-            { label: "15:00", value: 6100 },
-            { label: "17:00", value: 5900 },
-          ]}
-        />
-        <BarChart
-          title="Today's Dispatch Schedule"
-          data={[
-            { label: "09:00", value: 2, color: "#3b82f6" },
-            { label: "11:30", value: 3, color: "#06b6d4" },
-            { label: "14:00", value: 4, color: "#f59e0b" },
-            { label: "17:00", value: 3, color: "#ef4444" },
-          ]}
-        />
+      {/* Revenue + Insights */}
+      <div className="grid grid-cols-3 gap-4">
+        <Panel className="col-span-2 p-5">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-sm font-semibold" style={{ color: T.text }}>Revenue Overview</h3>
+            <button className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg"
+              style={{ background: T.panel2, color: T.dim, border: T.border }}>
+              This Week <ChevronDown size={13} />
+            </button>
+          </div>
+          <div className="flex items-baseline gap-2 mb-4">
+            <span className="text-2xl font-bold" style={{ color: T.text }}>₹4,20,90.20</span>
+            <span className="text-xs font-medium" style={{ color: "#34D399" }}>+14.3% vs last week</span>
+          </div>
+          <RevenueChart />
+        </Panel>
+
+        <Panel className="p-5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-semibold" style={{ color: T.text }}>Insights</h3>
+            <button className="text-xs" style={{ color: T.accent }}>View all</button>
+          </div>
+          <Insight icon={TrendingUp} tint="#34D399"
+            title="Revenue increased by 14.3%" sub="Compared to last week" />
+          <Insight icon={AlertCircle} tint="#F87171"
+            title="3 invoices are overdue" sub="Total value ₹2,45,000" />
+          <Insight icon={PackageSearch} tint="#FBBF24"
+            title="Inventory running low" sub="12 items need attention" />
+          <Insight icon={UserPlus} tint="#34D399"
+            title="7 new leads this week" sub="+22% vs last week" />
+        </Panel>
       </div>
 
-      {/* Revenue & Order Status */}
-      <div className="grid grid-cols-2 gap-6">
-        <LineChart
-          title="Revenue vs Target (This Month)"
-          data={[
-            { label: "Week 1", value: 200000 },
-            { label: "Week 2", value: 320000 },
-            { label: "Week 3", value: 380000 },
-            { label: "Week 4", value: 420000 },
-          ]}
-        />
-        <DonutChart
-          title="Order Status"
-          data={[
-            { label: "Confirmed", value: 34, color: "#3b82f6" },
-            { label: "In Production", value: 16, color: "#f59e0b" },
-            { label: "Completed", value: 14, color: "#10b981" },
-            { label: "Pending", value: 8, color: "#ef4444" },
-          ]}
-        />
+      {/* Bottom row */}
+      <div className="grid grid-cols-3 gap-4">
+        <Panel className="p-5">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: T.text }}>Top Products</h3>
+          {[
+            ["5 Ply Boxes", "₹88,900", "+8.3%"],
+            ["3 Ply Boxes", "₹83,000", "+6.2%"],
+            ["Custom Packaging", "₹68,900", "+9.3%"],
+          ].map(([n, v, d]) => (
+            <div key={n} className="flex items-center justify-between py-2.5 border-b last:border-0"
+              style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+              <span className="text-sm" style={{ color: T.text }}>{n}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold" style={{ color: T.text }}>{v}</span>
+                <span className="text-xs font-medium" style={{ color: "#34D399" }}>{d}</span>
+              </div>
+            </div>
+          ))}
+        </Panel>
+
+        <Panel className="p-5">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: T.text }}>Recent Transactions</h3>
+          {([
+            ["INV-10023", "₹45,000", "Paid", "ok"],
+            ["INV-10022", "₹32,500", "Pending", "warn"],
+            ["INV-10021", "₹18,900", "Paid", "ok"],
+          ] as const).map(([id, v, s, tone]) => (
+            <div key={id} className="flex items-center justify-between py-2.5 border-b last:border-0"
+              style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+              <span className="text-sm" style={{ color: T.dim }}>{id}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold" style={{ color: T.text }}>{v}</span>
+                <Pill label={s} tone={tone} />
+              </div>
+            </div>
+          ))}
+        </Panel>
+
+        <Panel className="p-5">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: T.text }}>Dispatch Activity</h3>
+          {([
+            ["CH-4807 · Ramesh Traders", "Dispatched", "ok"],
+            ["CH-4808 · Global Foods", "In Transit", "info"],
+            ["CH-4809 · FreshMart", "Pending", "warn"],
+          ] as const).map(([n, s, tone]) => (
+            <div key={n} className="flex items-center justify-between py-2.5 border-b last:border-0"
+              style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+              <span className="text-sm" style={{ color: T.text }}>{n}</span>
+              <Pill label={s} tone={tone} />
+            </div>
+          ))}
+        </Panel>
       </div>
-
-      {/* Gantt Timeline */}
-      <GanttChart
-        title="Production Timeline (Live)"
-        tasks={[
-          { id: "1", name: "Corrugation Line 1", start: 0, duration: 85, color: "#10b981" },
-          { id: "2", name: "Die Cut Machine 1", start: 5, duration: 75, color: "#3b82f6" },
-          { id: "3", name: "Printing Machine", start: 15, duration: 60, color: "#f59e0b" },
-          { id: "4", name: "Stitching Machine", start: 25, duration: 50, color: "#ef4444" },
-        ]}
-      />
-
-      {/* Top Customers Table */}
-      <DataTable
-        title="Top Customers (This Month)"
-        columns={[
-          { key: "customer", label: "Customer" },
-          { key: "orders", label: "Orders" },
-          { key: "revenue", label: "Revenue" },
-          { key: "status", label: "Status" },
-        ]}
-        rows={[
-          { customer: "Rajesh Enterprises", orders: 8, revenue: "₹2,40,000", status: "Active" },
-          { customer: "Priya Packaging", orders: 6, revenue: "₹1,80,000", status: "Active" },
-          { customer: "Kumar Industries", orders: 4, revenue: "₹1,20,000", status: "Pending" },
-          { customer: "Global Foods", orders: 5, revenue: "₹1,50,000", status: "Active" },
-          { customer: "FastMart Ltd", orders: 3, revenue: "₹90,000", status: "Active" },
-        ]}
-      />
-    </div>
+    </>
   );
 
-  // ==================== PRODUCTION TAB ====================
-  const productionContent = (
-    <div className="max-w-7xl mx-auto space-y-6">
+  /* ── PRODUCTION ── */
+  const production = (
+    <>
       <div className="grid grid-cols-5 gap-4">
-        <KPICard title="Machines Running" value="5 / 8" change={0} bgColor="bg-blue-50" />
-        <KPICard title="Work Orders" value="18" change={5} bgColor="bg-purple-50" />
-        <KPICard title="Capacity Util." value="73%" change={3} bgColor="bg-green-50" />
-        <KPICard title="Today's Output" value="24,560" change={8} bgColor="bg-yellow-50" />
-        <KPICard title="Rejection Rate" value="2.35%" change={-0.5} bgColor="bg-red-50" />
+        <KPI icon={Factory} label="Machines Running" value="5 / 8" delta="62.5% util" />
+        <KPI icon={FolderKanban} label="Work Orders" value="18" delta="+5%" />
+        <KPI icon={TrendingUp} label="Capacity" value="73%" delta="+3%" />
+        <KPI icon={Package} label="Today's Output" value="24,560" delta="+8% Sq.Ft." />
+        <KPI icon={AlertCircle} label="Rejection Rate" value="2.35%" delta="-0.45%" up={false} />
       </div>
-
-      <GanttChart
-        title="Production Timeline (Live)"
-        tasks={[
-          { id: "1", name: "Corrugation Line 1", start: 0, duration: 85, color: "#10b981" },
-          { id: "2", name: "Die Cut Machine 1", start: 5, duration: 75, color: "#3b82f6" },
-          { id: "3", name: "Printing Machine", start: 15, duration: 60, color: "#f59e0b" },
-          { id: "4", name: "Stitching Machine", start: 25, duration: 50, color: "#ef4444" },
-        ]}
-      />
-
-      <div className="grid grid-cols-2 gap-6">
-        <DataTable
-          title="Production Queue (Kanban)"
-          columns={[
-            { key: "code", label: "Work Order" },
-            { key: "status", label: "Status" },
-            { key: "progress", label: "Progress" },
-          ]}
-          rows={[
-            { code: "WO-1001", status: "In Progress", progress: "65%" },
-            { code: "WO-1002", status: "In Progress", progress: "45%" },
-            { code: "WO-1003", status: "Queued", progress: "0%" },
-          ]}
-        />
-        <BarChart
-          title="Machine Load"
-          data={[
-            { label: "Corrugation L1", value: 95, color: "#10b981" },
-            { label: "Die Cut M1", value: 78, color: "#3b82f6" },
-            { label: "Printing", value: 65, color: "#f59e0b" },
-            { label: "Stitching", value: 52, color: "#ef4444" },
-          ]}
-        />
-      </div>
-    </div>
+      <Panel className="p-5">
+        <h3 className="text-sm font-semibold mb-4" style={{ color: T.text }}>Machine Load</h3>
+        {([
+          ["Corrugation Line 1", 78], ["Corrugation Line 2", 65], ["Die Cut Machine 1", 82],
+          ["Flexo Printer", 60], ["Stitching Machine", 45],
+        ] as const).map(([n, v]) => (
+          <div key={n} className="flex items-center gap-4 py-2">
+            <span className="w-44 text-xs" style={{ color: T.dim }}>{n}</span>
+            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: T.panel2 }}>
+              <div className="h-full rounded-full"
+                style={{ width: `${v}%`, background: `linear-gradient(90deg,#6D5CFF,#8B5CF6)` }} />
+            </div>
+            <span className="text-xs font-semibold w-9 text-right" style={{ color: T.text }}>{v}%</span>
+          </div>
+        ))}
+      </Panel>
+      <Panel className="p-5">
+        <h3 className="text-sm font-semibold mb-3" style={{ color: T.text }}>Production Queue</h3>
+        {([
+          ["WO-1258 · Ramesh Traders · 7,600 Sq.Ft.", "In Progress 60%", "info"],
+          ["WO-1259 · FreshMart · 6,000 Sq.Ft.", "In Progress 45%", "info"],
+          ["WO-1261 · Global Foods · 5,000 Sq.Ft.", "Pending · Due 16 Jul", "warn"],
+          ["WO-1255 · Global Foods · 5,500 Sq.Ft.", "Completed", "ok"],
+        ] as const).map(([n, s, tone]) => (
+          <div key={n} className="flex items-center justify-between py-2.5 border-b last:border-0"
+            style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+            <span className="text-sm" style={{ color: T.text }}>{n}</span>
+            <Pill label={s} tone={tone} />
+          </div>
+        ))}
+      </Panel>
+    </>
   );
 
-  // ==================== INVENTORY TAB ====================
-  const inventoryContent = (
-    <div className="max-w-7xl mx-auto space-y-6">
+  /* ── INVENTORY ── */
+  const inventory = (
+    <>
       <div className="grid grid-cols-5 gap-4">
-        <KPICard title="Raw Materials" value="45,620" change={5} bgColor="bg-blue-50" />
-        <KPICard title="Paper Used" value="32 Kg" change={8} bgColor="bg-yellow-50" />
-        <KPICard title="SKU Boards" value="26,500" change={2} bgColor="bg-green-50" />
-        <KPICard title="Supplier Credit" value="₹12.75L" change={-5} bgColor="bg-purple-50" />
-        <KPICard title="POs in Transit" value="6" change={1} bgColor="bg-cyan-50" />
+        <KPI icon={Package} label="Total Reel Stock" value="45,620 Kg" delta="+5%" />
+        <KPI icon={PackageSearch} label="Paper Used (Month)" value="32,450 Kg" delta="+8%" />
+        <KPI icon={FolderKanban} label="BF Boards" value="26,500 Sq.Ft." delta="+2%" />
+        <KPI icon={AlertCircle} label="Supplier Credit" value="₹12,75,300" delta="30 days" up={false} />
+        <KPI icon={ShoppingCart} label="POs in Transit" value="6" delta="+1" />
       </div>
-
-      <div className="grid grid-cols-2 gap-6">
-        <BarChart
-          title="Supplier Payments Due (30 Days)"
-          data={[
-            { label: "Shrivee Mills", value: 250, color: "#3b82f6" },
-            { label: "Baba Paper Co", value: 180, color: "#f59e0b" },
-            { label: "Gulf Packaging", value: 165, color: "#10b981" },
-            { label: "Kumar Supp", value: 120, color: "#ef4444" },
-          ]}
-        />
-        <DataTable
-          title="Low Stock Alerts"
-          columns={[
-            { key: "item", label: "Item" },
-            { key: "qty", label: "Qty" },
-            { key: "alert", label: "Alert" },
-          ]}
-          rows={[
-            { item: "Text Liner", qty: "140", alert: "🔴 Critical" },
-            { item: "Corrugating Medium", qty: "120", alert: "🟡 Warning" },
-            { item: "Kraft Paper", qty: "155", alert: "🟢 Normal" },
-          ]}
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <Panel className="p-5">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: T.text }}>Low Stock Reels</h3>
+          {([
+            ["Test Liner · 140 GSM · 3 Ply", "1,240 Kg", "warn"],
+            ["Corrugating Medium · 120 GSM", "980 Kg", "warn"],
+            ["Kraft Paper · 200 GSM · 5 Ply", "1,100 Kg", "ok"],
+          ] as const).map(([n, v, tone]) => (
+            <div key={n} className="flex items-center justify-between py-2.5 border-b last:border-0"
+              style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+              <span className="text-sm" style={{ color: T.text }}>{n}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold" style={{ color: T.text }}>{v}</span>
+                <Pill label={tone === "warn" ? "Low" : "OK"} tone={tone} />
+              </div>
+            </div>
+          ))}
+        </Panel>
+        <Panel className="p-5">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: T.text }}>Supplier Payments Due</h3>
+          {([
+            ["Shree Paper Mills", "₹3,25,000 · 20 Jul"],
+            ["Krishna Paper Co.", "₹2,85,000 · 22 Jul"],
+            ["Sai Packaging", "₹2,10,300 · 25 Jul"],
+            ["Bharat Pulp & Paper", "₹2,49,000 · 30 Jul"],
+          ] as const).map(([n, v]) => (
+            <div key={n} className="flex items-center justify-between py-2.5 border-b last:border-0"
+              style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+              <span className="text-sm" style={{ color: T.text }}>{n}</span>
+              <span className="text-sm font-semibold" style={{ color: T.text }}>{v}</span>
+            </div>
+          ))}
+        </Panel>
       </div>
-    </div>
+    </>
   );
 
-  // ==================== ANALYTICS TAB ====================
-  const analyticsContent = (
-    <div className="max-w-7xl mx-auto space-y-6">
+  /* ── ANALYTICS ── */
+  const analytics = (
+    <>
       <div className="grid grid-cols-5 gap-4">
-        <KPICard title="Monthly Revenue" value="₹18.74L" change={12.45} bgColor="bg-green-50" />
-        <KPICard title="Monthly Profit" value="₹4.25L" change={8.35} bgColor="bg-blue-50" />
-        <KPICard title="Total Orders" value="64" change={9.88} bgColor="bg-purple-50" />
-        <KPICard title="Avg Order Value" value="₹29,289" change={3.15} bgColor="bg-yellow-50" />
-        <KPICard title="Receivables" value="₹19.63L" change={-5.2} bgColor="bg-red-50" />
+        <KPI icon={BarChart3} label="Monthly Revenue" value="₹18.74L" delta="+12.45%" />
+        <KPI icon={TrendingUp} label="Monthly Profit" value="₹4.25L" delta="+8.35%" />
+        <KPI icon={ShoppingCart} label="Total Orders" value="64" delta="+9.68%" />
+        <KPI icon={FolderKanban} label="Avg Order Value" value="₹29,289" delta="+2.15%" />
+        <KPI icon={AlertCircle} label="Receivables" value="₹19.63L" delta="-5.2%" up={false} />
       </div>
-
-      <div className="grid grid-cols-2 gap-6">
-        <LineChart
-          title="Monthly Revenue Trend (Last 6 Months)"
-          data={[
-            { label: "Aug", value: 180000 },
-            { label: "Sep", value: 200000 },
-            { label: "Oct", value: 220000 },
-            { label: "Nov", value: 240000 },
-            { label: "Dec", value: 260000 },
-            { label: "Jan", value: 280000 },
-          ]}
-        />
-        <DonutChart
-          title="Product Mix (By Revenue)"
-          data={[
-            { label: "5 Ply Boxes", value: 45, color: "#3b82f6" },
-            { label: "3 Ply Boxes", value: 35, color: "#f59e0b" },
-            { label: "Custom Pkg", value: 15, color: "#10b981" },
-            { label: "Other", value: 5, color: "#ef4444" },
-          ]}
-        />
+      <div className="grid grid-cols-3 gap-4">
+        <Panel className="col-span-2 p-5">
+          <h3 className="text-sm font-semibold mb-4" style={{ color: T.text }}>Revenue Trend (12 Months)</h3>
+          <RevenueChart />
+        </Panel>
+        <Panel className="p-5">
+          <h3 className="text-sm font-semibold mb-3" style={{ color: T.text }}>Top Customers</h3>
+          {([
+            ["Ramesh Traders", "₹4,25,600", "14"],
+            ["Global Foods", "₹3,15,750", "10"],
+            ["FreshMart", "₹2,78,900", "9"],
+            ["Bright Retail", "₹2,10,300", "7"],
+            ["Super Pack", "₹1,85,400", "6"],
+          ] as const).map(([n, v, o]) => (
+            <div key={n} className="flex items-center justify-between py-2.5 border-b last:border-0"
+              style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+              <span className="text-sm" style={{ color: T.text }}>{n}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold" style={{ color: T.text }}>{v}</span>
+                <span className="text-xs" style={{ color: T.dim }}>{o} orders</span>
+              </div>
+            </div>
+          ))}
+        </Panel>
       </div>
-
-      <div className="grid grid-cols-2 gap-6">
-        <BarChart
-          title="Revenue by Product Line"
-          data={[
-            { label: "5 Ply", value: 450000, color: "#3b82f6" },
-            { label: "3 Ply", value: 350000, color: "#f59e0b" },
-            { label: "Custom", value: 150000, color: "#10b981" },
-            { label: "Other", value: 50000, color: "#ef4444" },
-          ]}
-        />
-        <DataTable
-          title="Top Customers (By Revenue)"
-          columns={[
-            { key: "customer", label: "Customer" },
-            { key: "revenue", label: "Revenue" },
-            { key: "orders", label: "Orders" },
-          ]}
-          rows={[
-            { customer: "Rajesh Enterprises", revenue: "₹2,40,000", orders: "8" },
-            { customer: "Global Foods", revenue: "₹1,75,750", orders: "10" },
-            { customer: "FastMart Ltd", revenue: "₹1,50,300", orders: "7" },
-            { customer: "Bright Retail", revenue: "₹1,15,300", orders: "5" },
-            { customer: "Super Pack", revenue: "₹95,150", orders: "3" },
-          ]}
-        />
-      </div>
-    </div>
+    </>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Tab Navigation - Layout.tsx already provides the header/logo, this page only owns its tabs */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex gap-3 overflow-x-auto">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg transition font-medium whitespace-nowrap text-sm ${
-                    isActive
-                      ? "bg-blue-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  <Icon size={18} />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
+    <div className="min-h-full" style={{ background: T.bg }}>
+      {/* ── Greeting + search bar ── */}
+      <div className="px-8 pt-6 pb-2 flex items-center justify-between gap-6">
+        <div>
+          <h1 className="text-xl font-bold" style={{ color: T.text }}>
+            {greeting}, Sachin <span className="align-middle">👋</span>
+          </h1>
+          <p className="text-sm mt-0.5" style={{ color: T.dim }}>
+            Your business is performing well today.
+          </p>
+        </div>
+        <div className="flex-1 max-w-md relative">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2"
+            color={T.dim} />
+          <input
+            placeholder="Search anything…"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm outline-none"
+            style={{ background: T.panel, border: T.border, color: T.text }}
+          />
         </div>
       </div>
 
-      {/* Tab Content */}
-      <div className="p-6 min-h-[calc(100vh-130px)]">
-        {activeTab === "command" && commandContent}
-        {activeTab === "production" && productionContent}
-        {activeTab === "inventory" && inventoryContent}
-        {activeTab === "analytics" && analyticsContent}
+      {/* ── Tabs ── */}
+      <div className="px-8 py-3 flex gap-2">
+        {tabs.map((t) => {
+          const Icon = t.icon;
+          const active = tab === t.id;
+          return (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition"
+              style={active
+                ? { background: "linear-gradient(90deg,#6D5CFF,#8B5CF6)", color: "#fff" }
+                : { background: T.panel, color: T.dim, border: T.border }}>
+              <Icon size={15} />
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Content ── */}
+      <div className="px-8 pb-8 pt-2 space-y-4">
+        {tab === "command" && command}
+        {tab === "production" && production}
+        {tab === "inventory" && inventory}
+        {tab === "analytics" && analytics}
       </div>
     </div>
   );
