@@ -1,126 +1,85 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  Menu, X, LayoutDashboard, Users, ShoppingCart, Zap, FileText, Truck,
-  Package, Inbox, Users2, Clock, Wallet, DollarSign, LogOut, Bell, Settings,
+  LayoutDashboard, Users, ShoppingCart, Zap, FileText,
+  Truck, Package, Inbox, Users2, Clock, Wallet,
+  DollarSign, LogOut, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import threxaIcon from "../assets/threxa-icon.png";
-import IntroOverlay from "./IntroOverlay";
 
-const BG = "#0B0C14";
-const SIDEBAR = "#0E0F18";
-const BORDER = "1px solid rgba(255,255,255,0.06)";
+const NAV = [
+  { label: "Dashboard",  icon: LayoutDashboard, path: "/" },
+  { label: "Customers",  icon: Users,            path: "/customers" },
+  { label: "Orders",     icon: ShoppingCart,     path: "/orders" },
+  { label: "Production", icon: Zap,              path: "/production" },
+  { label: "Quotations", icon: FileText,         path: "/quotations" },
+  { label: "Invoices",   icon: FileText,         path: "/invoices" },
+  { label: "Dispatch",   icon: Truck,            path: "/dispatch" },
+  { label: "Products",   icon: Package,          path: "/products" },
+  { label: "Inventory",  icon: Inbox,            path: "/inventory" },
+  { label: "Employees",  icon: Users2,           path: "/employees" },
+  { label: "Attendance", icon: Clock,            path: "/attendance" },
+  { label: "Payroll",    icon: Wallet,           path: "/payroll" },
+  { label: "Cash Book",  icon: DollarSign,       path: "/cashbook" },
+];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(true);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [col, setCol] = useState(false);
+  const nav = useNavigate();
+  const loc = useLocation();
+  const on  = (p: string) => loc.pathname === p;
+  const out = async () => { await supabase.auth.signOut(); nav("/login"); };
 
-  const menu = [
-    { label: "Dashboard", icon: LayoutDashboard, path: "/" },
-    { label: "Customers", icon: Users, path: "/customers" },
-    { label: "Orders", icon: ShoppingCart, path: "/orders" },
-    { label: "Production", icon: Zap, path: "/production" },
-    { label: "Quotations", icon: FileText, path: "/quotations" },
-    { label: "Invoices", icon: FileText, path: "/invoices" },
-    { label: "Dispatch", icon: Truck, path: "/dispatch" },
-    { label: "Products", icon: Package, path: "/products" },
-    { label: "Inventory", icon: Inbox, path: "/inventory" },
-    { label: "Employees", icon: Users2, path: "/employees" },
-    { label: "Attendance", icon: Clock, path: "/attendance" },
-    { label: "Payroll", icon: Wallet, path: "/payroll" },
-    { label: "Cash Book", icon: DollarSign, path: "/cashbook" },
-  ];
-
-  const logout = async () => {
-    await supabase.auth.signOut();
-    navigate("/login");
-  };
+  const S: React.CSSProperties = { width: col ? 64 : 220, minWidth: col ? 64 : 220, transition: "width .2s ease, min-width .2s ease", background: "#0D0E1C", borderRight: "1px solid rgba(255,255,255,0.055)", display: "flex", flexDirection: "column" };
 
   return (
-    <div className="flex h-screen" style={{ background: BG }}>
-      <IntroOverlay />
-      {/* ── Sidebar ── */}
-      <aside
-        className={`${open ? "w-60" : "w-[68px]"} flex flex-col transition-all duration-300`}
-        style={{ background: SIDEBAR, borderRight: BORDER }}
-      >
-        {/* Brand: icon + tracked wordmark (text = always crisp) */}
-        <div className="h-16 px-4 flex items-center justify-between"
-          style={{ borderBottom: BORDER }}>
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <img src={threxaIcon} alt="Threxa" className="h-8 w-8 object-contain shrink-0" />
-            {open && (
-              <span
-                className="text-[15px] font-semibold select-none"
-                style={{ color: "#E7E8F0", letterSpacing: "0.34em" }}
-              >
-                THREXA
-              </span>
-            )}
+    <div style={{ display: "flex", height: "100vh", background: "#0A0B14", overflow: "hidden" }}>
+      <aside style={S}>
+
+        {/* brand */}
+        <div style={{ height: 56, padding: "0 14px", display: "flex", alignItems: "center", justifyContent: col ? "center" : "space-between", borderBottom: "1px solid rgba(255,255,255,0.055)", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9, overflow: "hidden" }}>
+            <img src={threxaIcon} style={{ width: 26, height: 26, objectFit: "contain", flexShrink: 0 }} />
+            {!col && <span style={{ color: "#D8D9EE", fontWeight: 600, fontSize: 13, letterSpacing: "0.32em", whiteSpace: "nowrap" }}>THREXA</span>}
           </div>
-          <button onClick={() => setOpen(!open)}
-            className="p-1.5 rounded transition hover:bg-white/5 text-gray-400">
-            {open ? <X size={17} /> : <Menu size={17} />}
+          <button onClick={() => setCol(!col)} style={{ background: "none", border: "none", cursor: "pointer", color: "#3D3F5E", padding: 4, borderRadius: 6, display: "flex", flexShrink: 0 }}>
+            {col ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {menu.map((m) => {
-            const Icon = m.icon;
-            const active = location.pathname === m.path;
-            return (
-              <button key={m.path} onClick={() => navigate(m.path)}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition"
-                style={active
-                  ? { background: "linear-gradient(90deg,#6D5CFF,#8B5CF6)", color: "#fff" }
-                  : { color: "#8A8CA3" }}
-                onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-                onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
-              >
-                <Icon size={17} className="shrink-0" />
-                {open && <span>{m.label}</span>}
-              </button>
-            );
-          })}
+        {/* nav */}
+        <nav style={{ flex: 1, padding: "10px 7px", overflowY: "auto", overflowX: "hidden" }}>
+          {NAV.map(({ label, icon: Icon, path }) => (
+            <button key={path} onClick={() => nav(path)} title={col ? label : undefined} style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, padding: col ? "9px 0" : "8px 11px", justifyContent: col ? "center" : "flex-start", borderRadius: 7, marginBottom: 1, border: "none", cursor: "pointer", background: on(path) ? "rgba(100,80,255,0.16)" : "transparent", color: on(path) ? "#9D87FF" : "#4E5070", fontSize: 13, fontWeight: on(path) ? 600 : 400, transition: "all .12s" }}
+              onMouseEnter={e => { if (!on(path)) { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,255,255,0.035)"; el.style.color = "#8E90B8"; }}}
+              onMouseLeave={e => { if (!on(path)) { const el = e.currentTarget as HTMLElement; el.style.background = "transparent"; el.style.color = "#4E5070"; }}}
+            >
+              <Icon size={15} style={{ flexShrink: 0 }} />
+              {!col && <span style={{ whiteSpace: "nowrap" }}>{label}</span>}
+            </button>
+          ))}
         </nav>
 
-        {/* User + logout */}
-        <div className="p-3" style={{ borderTop: BORDER }}>
-          <div className="flex items-center gap-3 px-2 py-2">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-              style={{ background: "linear-gradient(135deg,#6D5CFF,#8B5CF6)" }}>
-              S
-            </div>
-            {open && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate" style={{ color: "#E7E8F0" }}>Sachin</p>
-                <p className="text-[11px]" style={{ color: "#8A8CA3" }}>Administrator</p>
+        {/* user */}
+        <div style={{ padding: "10px 7px", borderTop: "1px solid rgba(255,255,255,0.055)", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9, padding: col ? "7px 0" : "7px 11px", justifyContent: col ? "center" : "flex-start" }}>
+            <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg,#5B4FDB,#9B6BF7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>S</div>
+            {!col && <>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: "#B8BAD8", fontSize: 12, fontWeight: 500 }}>Sachin K.</div>
+                <div style={{ color: "#3D3F5E", fontSize: 11 }}>Admin</div>
               </div>
-            )}
-            <button onClick={logout}
-              className="p-1.5 rounded transition hover:bg-white/5 text-gray-400 hover:text-red-400 shrink-0">
-              <LogOut size={16} />
-            </button>
+              <button onClick={out} style={{ background: "none", border: "none", cursor: "pointer", color: "#3D3F5E", padding: 4, borderRadius: 6, display: "flex" }} title="Sign out">
+                <LogOut size={14} />
+              </button>
+            </>}
           </div>
+          {col && <button onClick={out} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", color: "#3D3F5E", padding: "5px 0", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 4 }}><LogOut size={14} /></button>}
         </div>
       </aside>
 
-      {/* ── Main ── */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="h-14 px-6 flex items-center justify-end gap-1 shrink-0"
-          style={{ background: BG, borderBottom: BORDER }}>
-          <button className="p-2 rounded-lg transition hover:bg-white/5 text-gray-400">
-            <Bell size={17} />
-          </button>
-          <button className="p-2 rounded-lg transition hover:bg-white/5 text-gray-400">
-            <Settings size={17} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-auto">{children}</div>
-      </div>
+      <div style={{ flex: 1, overflowY: "auto" }}>{children}</div>
     </div>
   );
 }
