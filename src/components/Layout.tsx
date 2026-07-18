@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import threxaIcon from "../assets/threxa-icon.png";
+import IntroOverlay from "./IntroOverlay";
 
 const BG = "#0B0C14";
 const SIDEBAR = "#0E0F18";
@@ -39,6 +40,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen" style={{ background: BG }}>
+      <IntroOverlay />
       {/* ── Sidebar ── */}
       <aside
         className={`${open ? "w-60" : "w-[68px]"} flex flex-col transition-all duration-300`}
