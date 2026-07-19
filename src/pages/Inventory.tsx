@@ -1,281 +1,57 @@
-import React, { useState } from "react";
-import { Plus, Download, Trash2, Search } from "lucide-react";
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
+import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../ui/system";
 
-interface InventoryItem {
-  id: string;
-  name: string;
-  gsm: number;
-  burst_factor: number;
-  weight: number;
-  qty_units: number;
-  qty_reams: number;
-  location: string;
-  last_updated: string;
-}
+interface Item { id: string; name: string; gsm: number; bf: number; ply: string; kg: number; min: number; reams: number; location: string; updated: string; }
+
+const SEED: Item[] = [
+  { id: "1", name: "Test Liner",         gsm: 140, bf: 32, ply: "3 Ply", kg: 1240, min: 2000, reams: 25, location: "Godown A · Rack 01", updated: "16 Jul" },
+  { id: "2", name: "Corrugating Medium", gsm: 120, bf: 28, ply: "3 Ply", kg: 980,  min: 1500, reams: 15, location: "Godown A · Rack 02", updated: "16 Jul" },
+  { id: "3", name: "Kraft Paper",        gsm: 200, bf: 40, ply: "5 Ply", kg: 1100, min: 1500, reams: 22, location: "Godown B · Rack 01", updated: "15 Jul" },
+  { id: "4", name: "Duplex Board",       gsm: 250, bf: 45, ply: "5 Ply", kg: 2300, min: 2500, reams: 40, location: "Godown B · Rack 03", updated: "14 Jul" },
+  { id: "5", name: "White Top Liner",    gsm: 170, bf: 35, ply: "5 Ply", kg: 1450, min: 1500, reams: 28, location: "Godown C · Rack 01", updated: "16 Jul" },
+];
 
 export default function Inventory() {
-  const [items, setItems] = useState<InventoryItem[]>([
-    {
-      id: "1",
-      name: "Corrugated Box A4",
-      gsm: 150,
-      burst_factor: 8.0,
-      weight: 250,
-      qty_units: 5000,
-      qty_reams: 25,
-      location: "Rack A-01",
-      last_updated: "2024-07-16",
-    },
-    {
-      id: "2",
-      name: "Corrugated Box A3",
-      gsm: 200,
-      burst_factor: 10.0,
-      weight: 350,
-      qty_units: 3000,
-      qty_reams: 15,
-      location: "Rack A-02",
-      last_updated: "2024-07-16",
-    },
-    {
-      id: "3",
-      name: "Kraft Paper Roll",
-      gsm: 100,
-      burst_factor: 6.5,
-      weight: 180,
-      qty_units: 8000,
-      qty_reams: 40,
-      location: "Rack B-01",
-      last_updated: "2024-07-15",
-    },
-  ]);
+  const [rows, setRows] = useState(SEED);
+  const [q, setQ] = useState("");
+  const f = rows.filter(r => r.name.toLowerCase().includes(q.toLowerCase()) || r.location.toLowerCase().includes(q.toLowerCase()));
+  const low = rows.filter(r => r.kg < r.min).length;
+  const total = rows.reduce((s, r) => s + r.kg, 0);
 
-  const [showModal, setShowModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [formData, setFormData] = useState({
-    name: "",
-    qty_units: 0,
-    location: "",
-  });
-
-  const filteredItems = items.filter(
-    (i) =>
-      i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      i.location.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const totalValue = items.reduce((sum, item) => sum + item.weight * item.qty_units, 0);
-
-  const handleAddItem = () => {
-    if (formData.name && formData.location) {
-      setItems([
-        ...items,
-        {
-          id: Date.now().toString(),
-          ...formData,
-          gsm: 0,
-          burst_factor: 0,
-          weight: 0,
-          qty_reams: Math.floor(formData.qty_units / 200),
-          last_updated: new Date().toISOString().split("T")[0],
-        },
-      ]);
-      setFormData({ name: "", qty_units: 0, location: "" });
-      setShowModal(false);
-    }
-  };
-
-  const handleExport = () => {
-    const csv = [
-      ["Name", "GSM", "Burst Factor", "Weight", "Units", "Reams", "Location", "Last Updated"],
-      ...items.map((item) => [
-        item.name,
-        item.gsm,
-        item.burst_factor,
-        item.weight,
-        item.qty_units,
-        item.qty_reams,
-        item.location,
-        item.last_updated,
-      ]),
-    ]
-      .map((row) => row.join(","))
-      .join("\n");
-
-    const link = document.createElement("a");
-    link.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-    link.download = `inventory-${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
+  const exportCSV = () => {
+    const csv = [["Item", "GSM", "BF", "Ply", "Stock Kg", "Min Kg", "Reams", "Location"], ...f.map(r => [r.name, r.gsm, r.bf, r.ply, r.kg, r.min, r.reams, r.location])].map(r => r.join(",")).join("\n");
+    const a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv); a.download = "inventory.csv"; a.click();
   };
 
   return (
-    <div className="max-w-full">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Inventory</h1>
-        <p className="text-gray-500">Raw material and stock management</p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-6 mb-8">
-        <div className="bg-blue-100 text-blue-900 rounded-lg p-6">
-          <p className="text-sm font-medium opacity-75">Total Items</p>
-          <p className="text-3xl font-bold mt-2">{items.length}</p>
-        </div>
-        <div className="bg-yellow-100 text-yellow-900 rounded-lg p-6">
-          <p className="text-sm font-medium opacity-75">Total Units</p>
-          <p className="text-3xl font-bold mt-2">
-            {items.reduce((sum, i) => sum + i.qty_units, 0).toLocaleString()}
-          </p>
-        </div>
-        <div className="bg-green-100 text-green-900 rounded-lg p-6">
-          <p className="text-sm font-medium opacity-75">Inventory Weight</p>
-          <p className="text-3xl font-bold mt-2">
-            {(totalValue / 1000).toFixed(0)} kg
-          </p>
-        </div>
-      </div>
-
-      <div className="flex gap-4 mb-6">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-          <input
-            type="text"
-            placeholder="Search inventory..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <button
-          onClick={handleExport}
-          className="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition"
-        >
-          <Download size={20} />
-          Export
-        </button>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
-        >
-          <Plus size={20} />
-          Add Item
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#1a1a1a] text-white">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Item Name</th>
-              <th className="px-6 py-3 text-center text-sm font-semibold">GSM</th>
-              <th className="px-6 py-3 text-center text-sm font-semibold">Burst</th>
-              <th className="px-6 py-3 text-center text-sm font-semibold">Weight</th>
-              <th className="px-6 py-3 text-center text-sm font-semibold">Units</th>
-              <th className="px-6 py-3 text-center text-sm font-semibold">Reams</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Location</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Updated</th>
-              <th className="px-6 py-3 text-center text-sm font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredItems.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50 transition">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  {item.name}
-                </td>
-                <td className="px-6 py-4 text-sm text-center text-gray-600">
-                  {item.gsm}
-                </td>
-                <td className="px-6 py-4 text-sm text-center text-gray-600">
-                  {item.burst_factor}
-                </td>
-                <td className="px-6 py-4 text-sm text-center text-gray-600">
-                  {item.weight}g
-                </td>
-                <td className="px-6 py-4 text-sm text-center font-medium text-gray-900">
-                  {item.qty_units.toLocaleString()}
-                </td>
-                <td className="px-6 py-4 text-sm text-center font-medium text-gray-900">
-                  {item.qty_reams}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">{item.location}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {new Date(item.last_updated).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <button className="text-red-600 hover:text-red-900">
-                    <Trash2 size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Add Inventory Item</h2>
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Item Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter item name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Quantity (Units)
-                </label>
-                <input
-                  type="number"
-                  value={formData.qty_units}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      qty_units: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Rack A-01"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddItem}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Add Item
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    <PageShell title="Inventory" subtitle="Raw material reels and stock levels" meta={[`${total.toLocaleString("en-IN")} Kg total`, `${low} below reorder`, "Updated today"]}>
+      <KPIStrip items={[
+        { label: "Total Reel Stock", value: `${(total / 1000).toFixed(1)}T`, sub: `${rows.length} materials`, spark: [7.5, 7.4, 7.2, 7.1, 7.1, 7.07], color: T.accent },
+        { label: "Below Reorder", value: String(low), up: false, sub: "need purchase orders", spark: [1, 2, 2, 3, 3, 3], color: T.red },
+        { label: "Health Score", value: `${Math.round((rows.length - low) / rows.length * 100)}%`, sub: "stocked adequately", spark: [90, 85, 80, 70, 60, 40], color: T.amber },
+      ]} />
+      <ActionBar search={q} onSearch={setQ} placeholder="Search materials, locations…" primaryLabel="Add Stock" onExport={exportCSV} />
+      <DataTable
+        cols={[
+          { key: "name", label: "Material" }, { key: "spec", label: "Spec" },
+          { key: "stock", label: "Stock", align: "right" }, { key: "reams", label: "Reams", align: "center" },
+          { key: "location", label: "Location" }, { key: "level", label: "Level", align: "center" },
+          { key: "act", label: "", align: "right", width: 50 },
+        ]}
+        rows={f.map(r => {
+          const ok = r.kg >= r.min, near = r.kg >= r.min * 0.9;
+          return {
+            name: <Cell2 primary={r.name} secondary={`Updated ${r.updated}`} />,
+            spec: <span style={{ fontSize: 12.5 }}>{r.gsm} GSM · BF {r.bf} · {r.ply}</span>,
+            stock: <Cell2 primary={<span style={{ fontVariantNumeric: "tabular-nums", color: ok ? T.text : T.red, fontWeight: 600 }}>{r.kg.toLocaleString("en-IN")} Kg</span>} secondary={`Min ${r.min.toLocaleString("en-IN")} Kg`} />,
+            reams: <span style={{ fontVariantNumeric: "tabular-nums" }}>{r.reams}</span>,
+            location: <span style={{ fontSize: 12.5, color: T.muted }}>{r.location}</span>,
+            level: <Badge label={ok ? "OK" : near ? "Low" : "Critical"} color={ok ? T.green : near ? T.amber : T.red} />,
+            act: <button onClick={() => setRows(p => p.filter(x => x.id !== r.id))} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Trash2 size={14} /></button>,
+          };
+        })}
+      />
+    </PageShell>
   );
 }

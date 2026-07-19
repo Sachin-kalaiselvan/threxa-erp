@@ -1,312 +1,64 @@
-import React, { useState } from "react";
-import { Plus, Download, Trash2, Search, Eye } from "lucide-react";
+import { useState } from "react";
+import { Download, Trash2 } from "lucide-react";
+import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../ui/system";
 import { generateInvoicePDF } from "../utils/pdf";
 
-interface Invoice {
-  id: string;
-  invoice_no: string;
-  customer: string;
-  amount: number;
-  date: string;
-  due_date: string;
-  status: "draft" | "sent" | "paid" | "overdue";
-}
+interface Invoice { id: string; no: string; customer: string; gst: string; amount: number; date: string; due: string; status: "Draft" | "Sent" | "Paid" | "Overdue"; }
+
+const SEED: Invoice[] = [
+  { id: "1", no: "INV-10021", customer: "Rajesh Enterprises", gst: "27AABCU9603R1Z5", amount: 75000,  date: "15 Jul", due: "14 Aug", status: "Sent" },
+  { id: "2", no: "INV-10022", customer: "Priya Packaging",    gst: "27AABCV9603R2Z5", amount: 150000, date: "16 Jul", due: "15 Aug", status: "Paid" },
+  { id: "3", no: "INV-10023", customer: "Kumar Industries",   gst: "27AABCW9603R3Z5", amount: 45000,  date: "10 Jun", due: "10 Jul", status: "Overdue" },
+];
+
+const SC: Record<Invoice["status"], string> = { Draft: T.muted, Sent: T.blue, Paid: T.green, Overdue: T.red };
 
 export default function Invoices() {
-  const [invoices, setInvoices] = useState<Invoice[]>([
-    {
-      id: "1",
-      invoice_no: "INV-001",
-      customer: "Rajesh Enterprises",
-      amount: 75000,
-      date: "2024-07-15",
-      due_date: "2024-08-15",
-      status: "sent",
-    },
-    {
-      id: "2",
-      invoice_no: "INV-002",
-      customer: "Priya Packaging",
-      amount: 150000,
-      date: "2024-07-16",
-      due_date: "2024-08-16",
-      status: "paid",
-    },
-  ]);
+  const [rows, setRows] = useState(SEED);
+  const [q, setQ] = useState("");
+  const f = rows.filter(r => r.no.toLowerCase().includes(q.toLowerCase()) || r.customer.toLowerCase().includes(q.toLowerCase()));
+  const outstanding = rows.filter(r => r.status !== "Paid").reduce((s, r) => s + r.amount, 0);
+  const paid = rows.filter(r => r.status === "Paid").reduce((s, r) => s + r.amount, 0);
 
-  const [showModal, setShowModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [formData, setFormData] = useState({
-    invoice_no: "",
-    customer: "",
-    amount: 0,
-  });
-
-  const statusColors = {
-    draft: "bg-gray-100 text-gray-800",
-    sent: "bg-blue-100 text-blue-800",
-    paid: "bg-green-100 text-green-800",
-    overdue: "bg-red-100 text-red-800",
-  };
-
-  const filteredInvoices = invoices.filter(
-    (i) =>
-      i.invoice_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      i.customer.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleAddInvoice = () => {
-    if (formData.invoice_no && formData.customer) {
-      setInvoices([
-        ...invoices,
-        {
-          id: Date.now().toString(),
-          ...formData,
-          date: new Date().toISOString().split("T")[0],
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0],
-          status: "draft",
-        },
-      ]);
-      setFormData({ invoice_no: "", customer: "", amount: 0 });
-      setShowModal(false);
-    }
-  };
-
-  const handleDownload = (invoice: Invoice) => {
-    const pdfData = generateInvoicePDF({
-      invoice_no: invoice.invoice_no,
-      invoice_date: invoice.date,
-      due_date: invoice.due_date,
-      company_name: "Threxa Manufacturing",
-      company_gstin: "27AABCU9603R1Z5",
-      customer_name: invoice.customer,
-      customer_gstin: "27AABCV9603R2Z5",
-      customer_address: "Sample Address",
-      customer_state: "Karnataka",
-      items: [
-        {
-          description: "Corrugated Box",
-          hsn: "4819",
-          qty: 100,
-          rate: invoice.amount / 100,
-          amount: invoice.amount,
-        },
-      ],
-      subtotal: invoice.amount,
-      gst_rate: 18,
-      cgst: (invoice.amount * 0.09),
-      sgst: (invoice.amount * 0.09),
-      total: invoice.amount * 1.18,
-      doc_type: "tax_invoice",
+  const dl = (r: Invoice) => {
+    const pdf = generateInvoicePDF({
+      invoice_no: r.no, invoice_date: r.date, due_date: r.due,
+      company_name: "Smart Packaging Solutions", company_gstin: "29AABCS1234A1Z5",
+      customer_name: r.customer, customer_gstin: r.gst, customer_address: "—", customer_state: "Karnataka",
+      items: [{ description: "Corrugated Boxes", hsn: "4819", qty: 100, rate: r.amount / 100, amount: r.amount }],
+      subtotal: r.amount, gst_rate: 18, cgst: r.amount * 0.09, sgst: r.amount * 0.09, total: r.amount * 1.18, doc_type: "tax_invoice",
     });
-    const link = document.createElement("a");
-    link.href = pdfData;
-    link.download = `${invoice.invoice_no}.pdf`;
-    link.click();
+    const a = document.createElement("a"); a.href = pdf; a.download = `${r.no}.pdf`; a.click();
   };
 
   return (
-    <div className="max-w-full">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Invoices</h1>
-        <p className="text-gray-500">Generate and track invoices</p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-6 mb-8">
-        <div className="bg-blue-100 text-blue-900 rounded-lg p-6">
-          <p className="text-sm font-medium opacity-75">Total Invoices</p>
-          <p className="text-3xl font-bold mt-2">{invoices.length}</p>
-        </div>
-        <div className="bg-green-100 text-green-900 rounded-lg p-6">
-          <p className="text-sm font-medium opacity-75">Paid</p>
-          <p className="text-3xl font-bold mt-2">
-            ₹
-            {(
-              invoices
-                .filter((i) => i.status === "paid")
-                .reduce((sum, i) => sum + i.amount, 0) / 100000
-            ).toFixed(1)}
-            L
-          </p>
-        </div>
-        <div className="bg-red-100 text-red-900 rounded-lg p-6">
-          <p className="text-sm font-medium opacity-75">Outstanding</p>
-          <p className="text-3xl font-bold mt-2">
-            ₹
-            {(
-              invoices
-                .filter((i) => i.status !== "paid")
-                .reduce((sum, i) => sum + i.amount, 0) / 100000
-            ).toFixed(1)}
-            L
-          </p>
-        </div>
-      </div>
-
-      <div className="flex gap-4 mb-6">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-          <input
-            type="text"
-            placeholder="Search invoices..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
-        >
-          <Plus size={20} />
-          New Invoice
-        </button>
-      </div>
-
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[#1a1a1a] text-white">
-            <tr>
-              <th className="px-6 py-3 text-left text-sm font-semibold">
-                Invoice No
-              </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">
-                Customer
-              </th>
-              <th className="px-6 py-3 text-right text-sm font-semibold">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">Date</th>
-              <th className="px-6 py-3 text-left text-sm font-semibold">
-                Due Date
-              </th>
-              <th className="px-6 py-3 text-center text-sm font-semibold">
-                Status
-              </th>
-              <th className="px-6 py-3 text-center text-sm font-semibold">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredInvoices.map((invoice) => (
-              <tr key={invoice.id} className="hover:bg-gray-50 transition">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  {invoice.invoice_no}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {invoice.customer}
-                </td>
-                <td className="px-6 py-4 text-sm text-right font-medium text-gray-900">
-                  ₹{invoice.amount.toLocaleString()}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {new Date(invoice.date).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">
-                  {new Date(invoice.due_date).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-sm text-center">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      statusColors[invoice.status]
-                    }`}
-                  >
-                    {invoice.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <button
-                    onClick={() => handleDownload(invoice)}
-                    className="text-green-600 hover:text-green-900 mr-3"
-                  >
-                    <Download size={18} />
-                  </button>
-                  <button className="text-blue-600 hover:text-blue-900 mr-3">
-                    <Eye size={18} />
-                  </button>
-                  <button className="text-red-600 hover:text-red-900">
-                    <Trash2 size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              New Invoice
-            </h2>
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Invoice Number
-                </label>
-                <input
-                  type="text"
-                  value={formData.invoice_no}
-                  onChange={(e) =>
-                    setFormData({ ...formData, invoice_no: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="INV-001"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Customer
-                </label>
-                <input
-                  type="text"
-                  value={formData.customer}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customer: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter customer name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Amount (₹)
-                </label>
-                <input
-                  type="number"
-                  value={formData.amount}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      amount: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="0"
-                />
-              </div>
+    <PageShell title="Invoices" subtitle="Billing and collections" meta={[`${rows.length} invoices`, `₹${(outstanding / 100000).toFixed(1)}L outstanding`, `${rows.filter(r => r.status === "Overdue").length} overdue`]}>
+      <KPIStrip items={[
+        { label: "Collected", value: `₹${(paid / 100000).toFixed(1)}L`, delta: "+8%", sub: "this month", spark: [0.8, 1.0, 1.1, 1.3, 1.4, 1.5], color: T.green },
+        { label: "Outstanding", value: `₹${(outstanding / 100000).toFixed(1)}L`, sub: `${rows.filter(r => r.status !== "Paid").length} unpaid invoices`, spark: [1.5, 1.4, 1.3, 1.25, 1.2, 1.2], color: T.amber },
+        { label: "Overdue", value: `₹${(rows.filter(r => r.status === "Overdue").reduce((s, r) => s + r.amount, 0) / 1000).toFixed(0)}k`, up: false, sub: "needs follow-up", spark: [30, 35, 40, 42, 45, 45], color: T.red },
+      ]} />
+      <ActionBar search={q} onSearch={setQ} placeholder="Search invoices…" primaryLabel="New Invoice" />
+      <DataTable
+        cols={[
+          { key: "no", label: "Invoice" }, { key: "customer", label: "Customer" },
+          { key: "amount", label: "Amount", align: "right" }, { key: "dates", label: "Dates" },
+          { key: "status", label: "Status", align: "center" }, { key: "act", label: "", align: "right", width: 80 },
+        ]}
+        rows={f.map(r => ({
+          no: <span style={{ color: T.text, fontWeight: 600 }}>{r.no}</span>,
+          customer: <Cell2 primary={r.customer} secondary={<span style={{ fontFamily: "monospace", fontSize: 11 }}>{r.gst}</span>} />,
+          amount: <Cell2 primary={<span style={{ fontVariantNumeric: "tabular-nums" }}>₹{r.amount.toLocaleString("en-IN")}</span>} secondary="incl. 18% GST" />,
+          dates: <Cell2 primary={`Issued ${r.date}`} secondary={`Due ${r.due}`} />,
+          status: <Badge label={r.status} color={SC[r.status]} />,
+          act: (
+            <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+              <button title="Download PDF" onClick={() => dl(r)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Download size={14} /></button>
+              <button onClick={() => setRows(p => p.filter(x => x.id !== r.id))} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Trash2 size={14} /></button>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddInvoice}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Add Invoice
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+          ),
+        }))}
+      />
+    </PageShell>
   );
 }
