@@ -19,6 +19,7 @@ import Employees from "./pages/Employees";
 import Attendance from "./pages/Attendance";
 import Payroll from "./pages/Payroll";
 import CashBook from "./pages/CashBook";
+import Demo from "./pages/Demo";
 
 function NotConfigured() {
   return (
@@ -114,6 +115,7 @@ export default function App() {
         <Route path="/attendance" element={<Attendance />} />
         <Route path="/payroll" element={<Payroll />} />
         <Route path="/cashbook" element={<CashBook />} />
+        <Route path="/demo" element={<Demo />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
