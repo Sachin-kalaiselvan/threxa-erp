@@ -4,9 +4,18 @@ import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2, Btn } from 
 interface Rec { id: string; empId: string; name: string; dept: string; date: string; checkIn: string; checkOut: string; hours: string; status: "Present" | "Absent" | "Leave" | "Half Day"; }
 
 const SEED: Rec[] = [
-  { id: "1", empId: "EMP-001", name: "Ramesh Kumar", dept: "Production", date: "19 Jul", checkIn: "08:55", checkOut: "18:05", hours: "9h 10m", status: "Present" },
-  { id: "2", empId: "EMP-002", name: "Priya Singh",  dept: "Quality",    date: "19 Jul", checkIn: "09:12", checkOut: "17:48", hours: "8h 36m", status: "Present" },
-  { id: "3", empId: "EMP-003", name: "Ajay Patel",   dept: "Production", date: "19 Jul", checkIn: "—",     checkOut: "—",     hours: "—",      status: "Leave" },
+  { id: "1",  empId: "EMP-001", name: "Ramesh Kumar",  dept: "Production",  date: "30 Jul", checkIn: "08:55", checkOut: "18:05", hours: "9h 10m", status: "Present" },
+  { id: "2",  empId: "EMP-002", name: "Priya Singh",   dept: "Quality",     date: "30 Jul", checkIn: "09:12", checkOut: "17:48", hours: "8h 36m", status: "Present" },
+  { id: "3",  empId: "EMP-003", name: "Ajay Patel",    dept: "Production",  date: "30 Jul", checkIn: "—",     checkOut: "—",     hours: "—",      status: "Leave" },
+  { id: "4",  empId: "EMP-004", name: "Suresh Babu",   dept: "Production",  date: "30 Jul", checkIn: "08:48", checkOut: "18:20", hours: "9h 32m", status: "Present" },
+  { id: "5",  empId: "EMP-005", name: "Mahesh Naik",   dept: "Production",  date: "30 Jul", checkIn: "09:02", checkOut: "18:10", hours: "9h 08m", status: "Present" },
+  { id: "6",  empId: "EMP-006", name: "Vijay Shetty",  dept: "Production",  date: "30 Jul", checkIn: "08:40", checkOut: "17:55", hours: "9h 15m", status: "Present" },
+  { id: "7",  empId: "EMP-007", name: "Lakshmi Devi",  dept: "Accounts",    date: "30 Jul", checkIn: "09:30", checkOut: "14:00", hours: "4h 30m", status: "Half Day" },
+  { id: "8",  empId: "EMP-008", name: "Anil Gowda",    dept: "Stores",      date: "30 Jul", checkIn: "08:58", checkOut: "18:02", hours: "9h 04m", status: "Present" },
+  { id: "9",  empId: "EMP-009", name: "Manjunath R",   dept: "Dispatch",    date: "30 Jul", checkIn: "07:45", checkOut: "19:10", hours: "11h 25m",status: "Present" },
+  { id: "10", empId: "EMP-010", name: "Kavitha Rao",   dept: "Admin",       date: "30 Jul", checkIn: "09:20", checkOut: "17:40", hours: "8h 20m", status: "Present" },
+  { id: "11", empId: "EMP-011", name: "Farhan Sheikh", dept: "Production",  date: "30 Jul", checkIn: "—",     checkOut: "—",     hours: "—",      status: "Leave" },
+  { id: "12", empId: "EMP-012", name: "Deepak Yadav",  dept: "Maintenance", date: "30 Jul", checkIn: "—",     checkOut: "—",     hours: "—",      status: "Absent" },
 ];
 
 const SC: Record<Rec["status"], string> = { Present: T.green, Absent: T.red, Leave: T.amber, "Half Day": T.blue };
@@ -22,7 +31,7 @@ export default function Attendance() {
       <KPIStrip items={[
         { label: "Present", value: String(rows.filter(r => r.status === "Present").length), sub: `of ${rows.length} employees`, spark: [2, 3, 3, 2, 3, 2], color: T.green },
         { label: "On Leave", value: String(rows.filter(r => r.status === "Leave").length), sub: "approved", spark: [0, 0, 1, 1, 0, 1], color: T.amber },
-        { label: "Avg Hours", value: "8h 53m", delta: "+12m", sub: "vs last week", spark: [8.4, 8.5, 8.6, 8.7, 8.8, 8.9], color: T.blue },
+        { label: "Avg Hours", value: "8h 47m", delta: "+12m", sub: "vs last week", spark: [8.4, 8.5, 8.6, 8.7, 8.8, 8.9], color: T.blue },
       ]} />
       <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16 }}>
         <div style={{ flex: 1, maxWidth: 360 }}>
