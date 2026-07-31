@@ -5,10 +5,16 @@ import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2, Progress } 
 interface Job { id: string; wo: string; product: string; spec: string; customer: string; machine: string; operator: string; qty: string; pct: number; status: "Queued" | "In Progress" | "Completed" | "On Hold"; }
 
 const SEED: Job[] = [
-  { id: "1", wo: "WO-1258", product: "5 Ply Corrugated Box", spec: "200 GSM · BF 40", customer: "Ramesh Traders", machine: "Flexo Printer",     operator: "Ajay",   qty: "7,600 Sq.Ft.", pct: 60, status: "In Progress" },
-  { id: "2", wo: "WO-1259", product: "3 Ply Corrugated Box", spec: "140 GSM · BF 32", customer: "FreshMart",      machine: "Corrugation L1",    operator: "Ramesh", qty: "6,000 Sq.Ft.", pct: 45, status: "In Progress" },
-  { id: "3", wo: "WO-1261", product: "Duplex Board Box",     spec: "250 GSM · BF 45", customer: "Global Foods",   machine: "—",                 operator: "—",      qty: "5,000 Sq.Ft.", pct: 0,  status: "Queued" },
-  { id: "4", wo: "WO-1255", product: "5 Ply Corrugated Box", spec: "200 GSM · BF 40", customer: "Super Pack",     machine: "Stitching M/C",     operator: "Mahesh", qty: "5,500 Sq.Ft.", pct: 100, status: "Completed" },
+  { id: "1",  wo: "WO-1255", product: "5 Ply Corrugated Box", spec: "200 GSM · BF 40", customer: "Super Pack Industries", machine: "Stitching M/C",   operator: "Mahesh",  qty: "5,500 Sq.Ft.",  pct: 100, status: "Completed" },
+  { id: "2",  wo: "WO-1256", product: "3 Ply Corrugated Box", spec: "140 GSM · BF 32", customer: "Priya Packaging",       machine: "Corrugation L2", operator: "Vijay",   qty: "12,400 Sq.Ft.", pct: 100, status: "Completed" },
+  { id: "3",  wo: "WO-1257", product: "Mono Carton",          spec: "250 GSM · BF 45", customer: "Zenith Pharma Labs",    machine: "Die Cutter 1",   operator: "Suresh",  qty: "26,400 Sq.Ft.", pct: 100, status: "Completed" },
+  { id: "4",  wo: "WO-1258", product: "5 Ply Corrugated Box", spec: "200 GSM · BF 40", customer: "Ramesh Traders",        machine: "Flexo Printer",  operator: "Ajay",    qty: "7,600 Sq.Ft.",  pct: 60,  status: "In Progress" },
+  { id: "5",  wo: "WO-1259", product: "3 Ply Corrugated Box", spec: "140 GSM · BF 32", customer: "FreshMart Retail",      machine: "Corrugation L1", operator: "Ramesh",  qty: "6,000 Sq.Ft.",  pct: 45,  status: "In Progress" },
+  { id: "6",  wo: "WO-1260", product: "Die-Cut Tray",         spec: "170 GSM · BF 35", customer: "FreshMart Retail",      machine: "Die Cutter 2",   operator: "Deepak",  qty: "9,200 Sq.Ft.",  pct: 30,  status: "On Hold" },
+  { id: "7",  wo: "WO-1261", product: "Duplex Board Box",     spec: "250 GSM · BF 45", customer: "Global Foods Pvt Ltd",  machine: "—",              operator: "—",       qty: "5,000 Sq.Ft.",  pct: 0,   status: "Queued" },
+  { id: "8",  wo: "WO-1262", product: "5 Ply Corrugated Box", spec: "200 GSM · BF 40", customer: "Bright Retail Chain",   machine: "Die Cutter 1",   operator: "Suresh",  qty: "28,800 Sq.Ft.", pct: 72,  status: "In Progress" },
+  { id: "9",  wo: "WO-1263", product: "5 Ply Corrugated Box", spec: "200 GSM · BF 40", customer: "Super Pack Industries", machine: "Stitching M/C",  operator: "Mahesh",  qty: "18,000 Sq.Ft.", pct: 88,  status: "In Progress" },
+  { id: "10", wo: "WO-1264", product: "3 Ply Corrugated Box", spec: "140 GSM · BF 32", customer: "Marudhar Packaging",    machine: "—",              operator: "—",       qty: "9,600 Sq.Ft.",  pct: 0,   status: "Queued" },
 ];
 
 const SC: Record<Job["status"], string> = { Queued: T.muted, "In Progress": T.blue, Completed: T.green, "On Hold": T.red };
