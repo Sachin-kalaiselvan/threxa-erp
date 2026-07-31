@@ -5,9 +5,18 @@ import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../u
 interface Emp { id: string; empId: string; name: string; position: string; dept: string; phone: string; email: string; joined: string; status: "Active" | "On Leave" | "Inactive"; }
 
 const SEED: Emp[] = [
-  { id: "1", empId: "EMP-001", name: "Ramesh Kumar", position: "Production Manager", dept: "Production", phone: "+91 98765 43210", email: "ramesh@sps.in", joined: "Mar 2021", status: "Active" },
-  { id: "2", empId: "EMP-002", name: "Priya Singh",  position: "Quality Lead",       dept: "Quality",    phone: "+91 98765 43211", email: "priya@sps.in",  joined: "Aug 2022", status: "Active" },
-  { id: "3", empId: "EMP-003", name: "Ajay Patel",   position: "Machine Operator",   dept: "Production", phone: "+91 98765 43212", email: "ajay@sps.in",   joined: "Jan 2023", status: "On Leave" },
+  { id: "1",  empId: "EMP-001", name: "Ramesh Kumar",   position: "Production Manager",    dept: "Production",  phone: "+91 98765 43210", email: "ramesh@sps.in",  joined: "Mar 2021", status: "Active" },
+  { id: "2",  empId: "EMP-002", name: "Priya Singh",    position: "Quality Lead",          dept: "Quality",     phone: "+91 98765 43211", email: "priya@sps.in",   joined: "Aug 2022", status: "Active" },
+  { id: "3",  empId: "EMP-003", name: "Ajay Patel",     position: "Flexo Operator",        dept: "Production",  phone: "+91 98765 43212", email: "ajay@sps.in",    joined: "Jan 2023", status: "On Leave" },
+  { id: "4",  empId: "EMP-004", name: "Suresh Babu",    position: "Die Cutting Operator",  dept: "Production",  phone: "+91 98765 43213", email: "suresh@sps.in",  joined: "Jun 2021", status: "Active" },
+  { id: "5",  empId: "EMP-005", name: "Mahesh Naik",    position: "Stitching Operator",    dept: "Production",  phone: "+91 98765 43214", email: "mahesh@sps.in",  joined: "Feb 2022", status: "Active" },
+  { id: "6",  empId: "EMP-006", name: "Vijay Shetty",   position: "Corrugator Operator",   dept: "Production",  phone: "+91 98765 43215", email: "vijay@sps.in",   joined: "Sep 2020", status: "Active" },
+  { id: "7",  empId: "EMP-007", name: "Lakshmi Devi",   position: "Accounts Executive",    dept: "Accounts",    phone: "+91 98765 43216", email: "lakshmi@sps.in", joined: "Nov 2022", status: "Active" },
+  { id: "8",  empId: "EMP-008", name: "Anil Gowda",     position: "Store Keeper",          dept: "Stores",      phone: "+91 98765 43217", email: "anil@sps.in",    joined: "Apr 2023", status: "Active" },
+  { id: "9",  empId: "EMP-009", name: "Manjunath R",    position: "Dispatch Supervisor",   dept: "Dispatch",    phone: "+91 98765 43218", email: "manju@sps.in",   joined: "Jul 2021", status: "Active" },
+  { id: "10", empId: "EMP-010", name: "Kavitha Rao",    position: "HR & Admin",            dept: "Admin",       phone: "+91 98765 43219", email: "kavitha@sps.in", joined: "Jan 2024", status: "Active" },
+  { id: "11", empId: "EMP-011", name: "Farhan Sheikh",  position: "Helper",                dept: "Production",  phone: "+91 98765 43220", email: "farhan@sps.in",  joined: "May 2024", status: "On Leave" },
+  { id: "12", empId: "EMP-012", name: "Deepak Yadav",   position: "Maintenance Technician",dept: "Maintenance", phone: "+91 98765 43221", email: "deepak@sps.in",  joined: "Oct 2023", status: "Inactive" },
 ];
 
 const SC: Record<Emp["status"], string> = { Active: T.green, "On Leave": T.amber, Inactive: T.muted };
@@ -22,7 +31,7 @@ export default function Employees() {
       <KPIStrip items={[
         { label: "Headcount", value: String(rows.length), sub: "on payroll", spark: [2, 2, 3, 3, 3, 3], color: T.accent },
         { label: "Active Today", value: String(rows.filter(r => r.status === "Active").length), sub: `${rows.filter(r => r.status === "On Leave").length} on leave`, spark: [3, 3, 2, 2, 2, 2], color: T.green },
-        { label: "Departments", value: String(new Set(rows.map(r => r.dept)).size), sub: "Production · Quality", spark: [2, 2, 2, 2, 2, 2], color: T.blue },
+        { label: "Departments", value: String(new Set(rows.map(r => r.dept)).size), sub: [...new Set(rows.map(r => r.dept))].slice(0, 3).join(" · "), spark: [2, 2, 2, 2, 2, 2], color: T.blue },
       ]} />
       <ActionBar search={q} onSearch={setQ} placeholder="Search employees…" primaryLabel="New Employee" />
       <DataTable

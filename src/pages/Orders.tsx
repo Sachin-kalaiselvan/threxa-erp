@@ -5,9 +5,18 @@ import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../u
 interface Order { id: string; no: string; customer: string; contact: string; date: string; due: string; qty: number; sqft: string; amount: number; status: "Pending" | "Confirmed" | "In Production" | "Shipped" | "Delivered"; }
 
 const SEED: Order[] = [
-  { id: "1", no: "ORD-001", customer: "Rajesh Enterprises", contact: "Rajesh Kumar", date: "15 Jul", due: "22 Jul", qty: 500,  sqft: "7,600 Sq.Ft.",  amount: 75000,  status: "Confirmed" },
-  { id: "2", no: "ORD-002", customer: "Priya Packaging",    contact: "Priya Singh",  date: "16 Jul", due: "23 Jul", qty: 1000, sqft: "12,400 Sq.Ft.", amount: 150000, status: "Shipped" },
-  { id: "3", no: "ORD-003", customer: "Kumar Industries",   contact: "Kumar S.",     date: "17 Jul", due: "25 Jul", qty: 250,  sqft: "3,100 Sq.Ft.",  amount: 37500,  status: "Pending" },
+  { id: "1",  no: "ORD-001", customer: "Rajesh Enterprises",    contact: "Rajesh Kumar",  date: "15 Jul", due: "22 Jul", qty: 500,   sqft: "7,600 Sq.Ft.",  amount: 75000,  status: "Confirmed" },
+  { id: "2",  no: "ORD-002", customer: "Priya Packaging",       contact: "Priya Singh",   date: "16 Jul", due: "23 Jul", qty: 1000,  sqft: "12,400 Sq.Ft.", amount: 150000, status: "Shipped" },
+  { id: "3",  no: "ORD-003", customer: "Kumar Industries",      contact: "Kumar S.",      date: "17 Jul", due: "25 Jul", qty: 250,   sqft: "3,100 Sq.Ft.",  amount: 37500,  status: "Pending" },
+  { id: "4",  no: "ORD-004", customer: "Ramesh Traders",        contact: "Ramesh Gowda",  date: "18 Jul", due: "26 Jul", qty: 5000,  sqft: "62,000 Sq.Ft.", amount: 640000, status: "In Production" },
+  { id: "5",  no: "ORD-005", customer: "Global Foods Pvt Ltd",  contact: "Anita Menon",   date: "19 Jul", due: "27 Jul", qty: 3200,  sqft: "38,400 Sq.Ft.", amount: 412000, status: "In Production" },
+  { id: "6",  no: "ORD-006", customer: "FreshMart Retail",      contact: "Sandeep Rao",   date: "21 Jul", due: "29 Jul", qty: 1800,  sqft: "21,600 Sq.Ft.", amount: 234000, status: "Shipped" },
+  { id: "7",  no: "ORD-007", customer: "Bright Retail Chain",   contact: "Neha Kulkarni", date: "22 Jul", due: "30 Jul", qty: 2400,  sqft: "28,800 Sq.Ft.", amount: 306000, status: "In Production" },
+  { id: "8",  no: "ORD-008", customer: "Super Pack Industries", contact: "Vinod Shetty",  date: "23 Jul", due: "31 Jul", qty: 1500,  sqft: "18,000 Sq.Ft.", amount: 195000, status: "Confirmed" },
+  { id: "9",  no: "ORD-009", customer: "Vettiyil Packaging",    contact: "Anoop V.",      date: "24 Jul", due: "02 Aug", qty: 1200,  sqft: "14,400 Sq.Ft.", amount: 156000, status: "Confirmed" },
+  { id: "10", no: "ORD-010", customer: "Marudhar Packaging",    contact: "Dinesh M.",     date: "25 Jul", due: "04 Aug", qty: 800,   sqft: "9,600 Sq.Ft.",  amount: 104000, status: "Pending" },
+  { id: "11", no: "ORD-011", customer: "Nandi Agro Exports",    contact: "Shivaraj B.",   date: "27 Jul", due: "05 Aug", qty: 6000,  sqft: "74,000 Sq.Ft.", amount: 762000, status: "Delivered" },
+  { id: "12", no: "ORD-012", customer: "Zenith Pharma Labs",    contact: "Farida Ansari", date: "29 Jul", due: "07 Aug", qty: 2200,  sqft: "26,400 Sq.Ft.", amount: 289000, status: "Pending" },
 ];
 
 const SC: Record<Order["status"], string> = { Pending: T.amber, Confirmed: T.blue, "In Production": T.accent, Shipped: T.blue, Delivered: T.green };

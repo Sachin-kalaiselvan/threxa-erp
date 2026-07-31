@@ -10,9 +10,18 @@ interface Customer {
 }
 
 const SEED: Customer[] = [
-  { id: "1", name: "Rajesh Enterprises", since: "2022", email: "rajesh@example.com", phone: "+91 98765 43210", gst: "27AABCU9603R1Z5", orders: 45, spent: 450000, lastOrder: "15 Jul", active: true },
-  { id: "2", name: "Priya Packaging",    since: "2023", email: "priya@example.com",  phone: "+91 98765 43211", gst: "27AABCV9603R2Z5", orders: 32, spent: 320000, lastOrder: "12 Jul", active: true },
-  { id: "3", name: "Kumar Industries",   since: "2021", email: "kumar@example.com",  phone: "+91 98765 43212", gst: "27AABCW9603R3Z5", orders: 18, spent: 180000, lastOrder: "02 Jun", active: false },
+  { id: "1",  name: "Rajesh Enterprises",     since: "2021", email: "rajesh@rajeshent.in",     phone: "+91 98450 11234", gst: "29AABCR9603R1Z5", orders: 68, spent: 1845000, lastOrder: "29 Jul", active: true },
+  { id: "2",  name: "Priya Packaging",        since: "2022", email: "priya@priyapack.co.in",   phone: "+91 98450 11235", gst: "29AABCV9603R2Z5", orders: 52, spent: 1420000, lastOrder: "28 Jul", active: true },
+  { id: "3",  name: "Kumar Industries",       since: "2020", email: "accounts@kumarind.in",    phone: "+91 98450 11236", gst: "29AABCW9603R3Z5", orders: 41, spent: 986000,  lastOrder: "12 Jun", active: false },
+  { id: "4",  name: "Ramesh Traders",         since: "2019", email: "ramesh@rameshtraders.in", phone: "+91 98450 11237", gst: "29AACCR4521M1Z9", orders: 94, spent: 3120000, lastOrder: "30 Jul", active: true },
+  { id: "5",  name: "Global Foods Pvt Ltd",   since: "2022", email: "purchase@globalfoods.in", phone: "+91 98450 11238", gst: "29AAGCG7712K1ZB", orders: 57, spent: 2245000, lastOrder: "30 Jul", active: true },
+  { id: "6",  name: "FreshMart Retail",       since: "2023", email: "vendors@freshmart.in",    phone: "+91 98450 11239", gst: "29AAFCF3390L1ZP", orders: 33, spent: 1180000, lastOrder: "29 Jul", active: true },
+  { id: "7",  name: "Bright Retail Chain",    since: "2023", email: "supply@brightretail.in",  phone: "+91 98450 11240", gst: "29AABCB8821N1ZQ", orders: 28, spent: 845000,  lastOrder: "27 Jul", active: true },
+  { id: "8",  name: "Super Pack Industries",  since: "2021", email: "info@superpack.co.in",    phone: "+91 98450 11241", gst: "29AASCS1140P1ZR", orders: 46, spent: 1560000, lastOrder: "26 Jul", active: true },
+  { id: "9",  name: "Vettiyil Packaging",     since: "2024", email: "anoop@vettiyil.in",       phone: "+91 98450 11242", gst: "32AAVCV2210Q1ZT", orders: 12, spent: 385000,  lastOrder: "24 Jul", active: true },
+  { id: "10", name: "Marudhar Packaging",     since: "2024", email: "dinesh@marudhar.co.in",   phone: "+91 98450 11243", gst: "27AAMCM6650R1ZU", orders: 9,  spent: 268000,  lastOrder: "22 Jul", active: true },
+  { id: "11", name: "Nandi Agro Exports",     since: "2020", email: "ops@nandiagro.in",        phone: "+91 98450 11244", gst: "29AANCN9930S1ZV", orders: 61, spent: 2680000, lastOrder: "29 Jul", active: true },
+  { id: "12", name: "Zenith Pharma Labs",     since: "2022", email: "stores@zenithpharma.in",  phone: "+91 98450 11245", gst: "29AAZCZ4470T1ZW", orders: 37, spent: 1395000, lastOrder: "18 Jul", active: false },
 ];
 
 export default function Customers() {

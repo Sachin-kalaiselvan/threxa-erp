@@ -5,9 +5,18 @@ import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../u
 interface Pay { id: string; empId: string; name: string; dept: string; base: number; allowance: number; deduction: number; net: number; status: "Draft" | "Approved" | "Paid"; }
 
 const SEED: Pay[] = [
-  { id: "1", empId: "EMP-001", name: "Ramesh Kumar", dept: "Production", base: 50000, allowance: 5000, deduction: 3000, net: 52000, status: "Paid" },
-  { id: "2", empId: "EMP-002", name: "Priya Singh",  dept: "Quality",    base: 45000, allowance: 4500, deduction: 2500, net: 47000, status: "Approved" },
-  { id: "3", empId: "EMP-003", name: "Ajay Patel",   dept: "Production", base: 28000, allowance: 2000, deduction: 1200, net: 28800, status: "Draft" },
+  { id: "1",  empId: "EMP-001", name: "Ramesh Kumar",  dept: "Production",  base: 50000, allowance: 5000, deduction: 3000, net: 52000, status: "Paid" },
+  { id: "2",  empId: "EMP-002", name: "Priya Singh",   dept: "Quality",     base: 45000, allowance: 4500, deduction: 2500, net: 47000, status: "Paid" },
+  { id: "3",  empId: "EMP-003", name: "Ajay Patel",    dept: "Production",  base: 28000, allowance: 2000, deduction: 1200, net: 28800, status: "Draft" },
+  { id: "4",  empId: "EMP-004", name: "Suresh Babu",   dept: "Production",  base: 30000, allowance: 2500, deduction: 1400, net: 31100, status: "Paid" },
+  { id: "5",  empId: "EMP-005", name: "Mahesh Naik",   dept: "Production",  base: 29000, allowance: 2200, deduction: 1300, net: 29900, status: "Paid" },
+  { id: "6",  empId: "EMP-006", name: "Vijay Shetty",  dept: "Production",  base: 32000, allowance: 2800, deduction: 1500, net: 33300, status: "Approved" },
+  { id: "7",  empId: "EMP-007", name: "Lakshmi Devi",  dept: "Accounts",    base: 38000, allowance: 3500, deduction: 2100, net: 39400, status: "Approved" },
+  { id: "8",  empId: "EMP-008", name: "Anil Gowda",    dept: "Stores",      base: 26000, allowance: 1800, deduction: 1100, net: 26700, status: "Paid" },
+  { id: "9",  empId: "EMP-009", name: "Manjunath R",   dept: "Dispatch",    base: 34000, allowance: 4200, deduction: 1700, net: 36500, status: "Paid" },
+  { id: "10", empId: "EMP-010", name: "Kavitha Rao",   dept: "Admin",       base: 36000, allowance: 3000, deduction: 1900, net: 37100, status: "Approved" },
+  { id: "11", empId: "EMP-011", name: "Farhan Sheikh", dept: "Production",  base: 18000, allowance: 1200, deduction: 700,  net: 18500, status: "Draft" },
+  { id: "12", empId: "EMP-012", name: "Deepak Yadav",  dept: "Maintenance", base: 31000, allowance: 2600, deduction: 1500, net: 32100, status: "Draft" },
 ];
 
 const SC: Record<Pay["status"], string> = { Draft: T.muted, Approved: T.blue, Paid: T.green };

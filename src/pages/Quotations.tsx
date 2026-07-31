@@ -5,9 +5,16 @@ import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../u
 interface Quote { id: string; no: string; customer: string; contact: string; amount: number; items: string; date: string; validity: string; status: "Draft" | "Sent" | "Accepted" | "Rejected"; }
 
 const SEED: Quote[] = [
-  { id: "1", no: "QT-118", customer: "Rajesh Enterprises", contact: "Rajesh Kumar", amount: 75000,  items: "5 Ply Box × 500",   date: "15 Jul", validity: "14 Aug", status: "Accepted" },
-  { id: "2", no: "QT-119", customer: "Vettiyil Packaging", contact: "Anoop V.",     amount: 125000, items: "3 Ply Box × 1,200", date: "16 Jul", validity: "15 Aug", status: "Sent" },
-  { id: "3", no: "QT-120", customer: "Marudhar Packaging", contact: "Dinesh M.",    amount: 92000,  items: "Duplex Box × 800",  date: "18 Jul", validity: "17 Aug", status: "Draft" },
+  { id: "1",  no: "QT-118", customer: "Rajesh Enterprises",    contact: "Rajesh Kumar",  amount: 75000,  items: "5 Ply Box × 500",    date: "15 Jul", validity: "14 Aug", status: "Accepted" },
+  { id: "2",  no: "QT-119", customer: "Vettiyil Packaging",    contact: "Anoop V.",      amount: 156000, items: "3 Ply Box × 1,200",  date: "16 Jul", validity: "15 Aug", status: "Sent" },
+  { id: "3",  no: "QT-120", customer: "Marudhar Packaging",    contact: "Dinesh M.",     amount: 104000, items: "Duplex Box × 800",   date: "18 Jul", validity: "17 Aug", status: "Draft" },
+  { id: "4",  no: "QT-121", customer: "Ramesh Traders",        contact: "Ramesh Gowda",  amount: 640000, items: "5 Ply Box × 5,000",  date: "18 Jul", validity: "17 Aug", status: "Accepted" },
+  { id: "5",  no: "QT-122", customer: "Global Foods Pvt Ltd",  contact: "Anita Menon",   amount: 412000, items: "5 Ply Box × 3,200",  date: "19 Jul", validity: "18 Aug", status: "Accepted" },
+  { id: "6",  no: "QT-123", customer: "Bright Retail Chain",   contact: "Neha Kulkarni", amount: 306000, items: "3 Ply Box × 2,400",  date: "22 Jul", validity: "21 Aug", status: "Accepted" },
+  { id: "7",  no: "QT-124", customer: "Zenith Pharma Labs",    contact: "Farida Ansari", amount: 289000, items: "Mono Carton × 2,200",date: "23 Jul", validity: "22 Aug", status: "Sent" },
+  { id: "8",  no: "QT-125", customer: "Kumar Industries",      contact: "Kumar S.",      amount: 168000, items: "3 Ply Box × 1,400",  date: "24 Jul", validity: "23 Aug", status: "Rejected" },
+  { id: "9",  no: "QT-126", customer: "Nandi Agro Exports",    contact: "Shivaraj B.",   amount: 762000, items: "5 Ply Box × 6,000",  date: "27 Jul", validity: "26 Aug", status: "Accepted" },
+  { id: "10", no: "QT-127", customer: "FreshMart Retail",      contact: "Sandeep Rao",   amount: 198000, items: "Die-Cut Tray × 1,600",date: "29 Jul", validity: "28 Aug", status: "Sent" },
 ];
 
 const SC: Record<Quote["status"], string> = { Draft: T.muted, Sent: T.blue, Accepted: T.green, Rejected: T.red };

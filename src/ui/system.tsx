@@ -3,8 +3,8 @@
    Single source of truth for every page.
    Rule: modules NEVER hand-roll layout — they compose these.
    ═══════════════════════════════════════════════════════════ */
-import { useState } from "react";
-import { Search, Filter, Download, Upload, Plus, ChevronLeft, ChevronRight, Inbox } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, Filter, Download, Upload, Plus, ChevronLeft, ChevronRight, Inbox, X } from "lucide-react";
 
 /* ── tokens ─────────────────────────────────────────────── */
 export const T = {
@@ -158,8 +158,19 @@ export function KPIStrip({ items }: {
 }
 
 /* ── ActionBar: search · filter · export · import · primary ─ */
-export function ActionBar({ search, onSearch, placeholder = "Search…", primaryLabel, onPrimary, showFilter = true, showExport = true, showImport = false, onExport }:
-  { search: string; onSearch: (v: string) => void; placeholder?: string; primaryLabel?: string; onPrimary?: () => void; showFilter?: boolean; showExport?: boolean; showImport?: boolean; onExport?: () => void }) {
+export function ActionBar({
+  search, onSearch, placeholder = "Search…", primaryLabel, onPrimary,
+  showExport = true, showImport = false, onExport, onImport,
+  filterLabel = "Status", filterValue = "All", filterOptions, onFilter,
+}: {
+  search: string; onSearch: (v: string) => void; placeholder?: string;
+  primaryLabel?: string; onPrimary?: () => void;
+  showExport?: boolean; showImport?: boolean;
+  onExport?: () => void; onImport?: (file: File) => void;
+  filterLabel?: string; filterValue?: string;
+  filterOptions?: readonly string[]; onFilter?: (v: string) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement | null>(null);
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16 }}>
       <div style={{ position: "relative", flex: 1, maxWidth: 360 }}>
@@ -168,9 +179,31 @@ export function ActionBar({ search, onSearch, placeholder = "Search…", primary
           style={{ width: "100%", height: 38, background: T.card, border: `1px solid ${T.line}`, borderRadius: 8, padding: "0 12px 0 32px", fontSize: 13, color: T.text, outline: "none", boxSizing: "border-box" }} />
       </div>
       <div style={{ flex: 1 }} />
-      {showFilter && <Btn icon={Filter}>Filter</Btn>}
+
+      {filterOptions && filterOptions.length > 0 && (
+        <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+          <Filter size={13} style={{ position: "absolute", left: 12, color: T.muted, pointerEvents: "none" }} />
+          <select
+            value={filterValue}
+            onChange={e => onFilter?.(e.target.value)}
+            style={{ height: 38, background: filterValue === "All" ? T.card : T.card2, border: `1px solid ${filterValue === "All" ? T.line : T.accent}`, borderRadius: 8, padding: "0 30px 0 32px", fontSize: 13, color: filterValue === "All" ? T.sub : T.text, outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none" }}>
+            <option value="All">{filterLabel}: All</option>
+            {filterOptions.map(o => <option key={o} value={o}>{filterLabel}: {o}</option>)}
+          </select>
+          <ChevronRight size={13} style={{ position: "absolute", right: 11, color: T.muted, pointerEvents: "none", transform: "rotate(90deg)" }} />
+        </div>
+      )}
+
       {showExport && <Btn icon={Download} onClick={onExport}>Export</Btn>}
-      {showImport && <Btn icon={Upload}>Import</Btn>}
+
+      {showImport && (
+        <>
+          <input ref={fileRef} type="file" accept=".csv,text/csv" style={{ display: "none" }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) onImport?.(f); e.target.value = ""; }} />
+          <Btn icon={Upload} onClick={() => fileRef.current?.click()}>Import</Btn>
+        </>
+      )}
+
       {primaryLabel && <Btn variant="primary" icon={Plus} onClick={onPrimary}>{primaryLabel}</Btn>}
     </div>
   );
@@ -252,4 +285,261 @@ export function Cell2({ primary, secondary }: { primary: React.ReactNode; second
       {secondary && <div style={{ color: T.muted, fontSize: 11, marginTop: 2 }}>{secondary}</div>}
     </div>
   );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INTERACTION PRIMITIVES
+   Modal · FormModal · Menu · MenuItem · Toggle · useClickOutside
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── useClickOutside: closes on outside mousedown or Escape ── */
+export function useClickOutside<T extends HTMLElement>(onClose: () => void) {
+  const ref = useRef<T | null>(null);
+  const cb = useRef(onClose);
+  cb.current = onClose;
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) cb.current();
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") cb.current(); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+  return ref;
+}
+
+/* ── Menu: anchored dropdown panel. Parent must be position:relative ── */
+export function Menu({ open, onClose, width = 280, align = "right", children }:
+  { open: boolean; onClose: () => void; width?: number; align?: "left" | "right"; children: React.ReactNode }) {
+  const ref = useClickOutside<HTMLDivElement>(onClose);
+  if (!open) return null;
+  const pos: React.CSSProperties = align === "right" ? { right: 0 } : { left: 0 };
+  return (
+    <div ref={ref} style={{
+      position: "absolute", top: "calc(100% + 10px)", ...pos, width,
+      background: T.card, border: `1px solid ${T.line}`, borderRadius: T.radius,
+      boxShadow: "0 20px 56px rgba(0,0,0,0.6)", zIndex: 80, overflow: "hidden",
+    }}>
+      {children}
+    </div>
+  );
+}
+
+/* ── MenuItem ── */
+export function MenuItem({ icon: Icon, label, sub, danger = false, onClick }:
+  { icon?: any; label: string; sub?: string; danger?: boolean; onClick?: () => void }) {
+  return (
+    <button onClick={onClick} style={{
+      width: "100%", display: "flex", alignItems: "center", gap: 10,
+      padding: "10px 14px", background: "none", border: "none", cursor: "pointer",
+      textAlign: "left", color: danger ? T.red : T.sub, fontSize: 13,
+    }}
+      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
+      onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+      {Icon && <Icon size={15} style={{ flexShrink: 0 }} />}
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", color: danger ? T.red : T.text, fontWeight: 500 }}>{label}</span>
+        {sub && <span style={{ display: "block", color: T.muted, fontSize: 11.5, marginTop: 1 }}>{sub}</span>}
+      </span>
+    </button>
+  );
+}
+
+/* ── Toggle ── */
+export function Toggle({ on, onChange, label, sub }:
+  { on: boolean; onChange: (v: boolean) => void; label: string; sub?: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 0", borderBottom: `1px solid ${T.lineSoft}` }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 13, color: T.text, fontWeight: 500 }}>{label}</div>
+        {sub && <div style={{ fontSize: 11.5, color: T.muted, marginTop: 2 }}>{sub}</div>}
+      </div>
+      <button onClick={() => onChange(!on)} style={{
+        width: 38, height: 21, borderRadius: 11, border: "none", cursor: "pointer", flexShrink: 0,
+        background: on ? T.accent : "rgba(255,255,255,0.12)", position: "relative", transition: "background .15s",
+      }}>
+        <span style={{
+          position: "absolute", top: 3, left: on ? 20 : 3, width: 15, height: 15,
+          borderRadius: "50%", background: "#fff", transition: "left .15s",
+        }} />
+      </button>
+    </div>
+  );
+}
+
+/* ── Modal: overlay + centred card. Render conditionally. ── */
+export function Modal({ title, subtitle, onClose, children, footer, width = 580 }:
+  { title: string; subtitle?: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode; width?: number }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [onClose]);
+
+  return (
+    <div onMouseDown={onClose} style={{
+      position: "fixed", inset: 0, background: "rgba(4,5,12,0.72)", backdropFilter: "blur(3px)",
+      zIndex: 200, display: "flex", alignItems: "flex-start", justifyContent: "center",
+      padding: "60px 20px 40px", overflowY: "auto",
+    }}>
+      <div onMouseDown={e => e.stopPropagation()} style={{
+        width: "100%", maxWidth: width, background: T.card, border: `1px solid ${T.line}`,
+        borderRadius: 14, boxShadow: "0 32px 80px rgba(0,0,0,0.65)", overflow: "hidden",
+      }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "18px 20px 14px", borderBottom: `1px solid ${T.lineSoft}` }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{title}</div>
+            {subtitle && <div style={{ fontSize: 12, color: T.muted, marginTop: 3 }}>{subtitle}</div>}
+          </div>
+          <button onClick={onClose} aria-label="Close" style={{
+            background: "none", border: "none", cursor: "pointer", color: T.muted,
+            padding: 5, borderRadius: 6, display: "flex", flexShrink: 0,
+          }}
+            onMouseEnter={e => (e.currentTarget.style.color = T.text)}
+            onMouseLeave={e => (e.currentTarget.style.color = T.muted)}>
+            <X size={17} />
+          </button>
+        </div>
+
+        <div style={{ padding: "18px 20px" }}>{children}</div>
+
+        {footer && (
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "14px 20px", borderTop: `1px solid ${T.lineSoft}`, background: T.card2 }}>
+            {footer}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── FormModal: declarative create/edit form ── */
+export type FieldSpec = {
+  key: string;
+  label: string;
+  type?: "text" | "number" | "select" | "date";
+  options?: readonly string[];
+  placeholder?: string;
+  required?: boolean;
+  half?: boolean;
+};
+
+const inputStyle: React.CSSProperties = {
+  width: "100%", height: 38, background: T.bg, border: `1px solid ${T.line}`,
+  borderRadius: 8, padding: "0 11px", fontSize: 13, color: T.text,
+  outline: "none", boxSizing: "border-box",
+};
+
+export function FormModal({ title, subtitle, fields, initial, submitLabel = "Save", onClose, onSave }: {
+  title: string;
+  subtitle?: string;
+  fields: readonly FieldSpec[];
+  initial?: Record<string, any>;
+  submitLabel?: string;
+  onClose: () => void;
+  onSave: (values: Record<string, any>) => void;
+}) {
+  const [v, setV] = useState<Record<string, any>>(() => {
+    const o: Record<string, any> = {};
+    for (const f of fields) {
+      const seed = initial?.[f.key];
+      o[f.key] = seed !== undefined && seed !== null
+        ? String(seed)
+        : f.type === "select" ? (f.options?.[0] ?? "") : "";
+    }
+    return o;
+  });
+  const [missing, setMissing] = useState<string[]>([]);
+
+  const set = (k: string, val: string) => {
+    setV(p => ({ ...p, [k]: val }));
+    setMissing(p => p.filter(x => x !== k));
+  };
+
+  const submit = () => {
+    const bad = fields.filter(f => f.required && !String(v[f.key] ?? "").trim()).map(f => f.key);
+    if (bad.length) { setMissing(bad); return; }
+    const out: Record<string, any> = {};
+    for (const f of fields) {
+      const raw = String(v[f.key] ?? "").trim();
+      out[f.key] = f.type === "number" ? (raw === "" ? 0 : Number(raw.replace(/[^0-9.-]/g, "")) || 0) : raw;
+    }
+    onSave(out);
+  };
+
+  return (
+    <Modal title={title} subtitle={subtitle} onClose={onClose} footer={
+      <>
+        <Btn onClick={onClose}>Cancel</Btn>
+        <Btn variant="primary" onClick={submit}>{submitLabel}</Btn>
+      </>
+    }>
+      {missing.length > 0 && (
+        <div style={{ background: "rgba(248,113,113,0.10)", border: `1px solid rgba(248,113,113,0.35)`, color: T.red, fontSize: 12.5, borderRadius: 8, padding: "9px 12px", marginBottom: 14 }}>
+          Please fill the highlighted {missing.length === 1 ? "field" : "fields"}.
+        </div>
+      )}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "13px 14px" }}>
+        {fields.map(f => {
+          const bad = missing.includes(f.key);
+          const border = bad ? T.red : T.line;
+          return (
+            <div key={f.key} style={{ gridColumn: f.half ? "span 1" : "span 2" }}>
+              <label style={{ display: "block", fontSize: 11.5, color: T.sub, marginBottom: 5, fontWeight: 500 }}>
+                {f.label}{f.required && <span style={{ color: T.red, marginLeft: 3 }}>*</span>}
+              </label>
+              {f.type === "select" ? (
+                <select value={v[f.key]} onChange={e => set(f.key, e.target.value)}
+                  style={{ ...inputStyle, borderColor: border, cursor: "pointer" }}>
+                  {(f.options ?? []).map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              ) : (
+                <input
+                  type={f.type === "number" ? "number" : f.type === "date" ? "date" : "text"}
+                  value={v[f.key]}
+                  placeholder={f.placeholder}
+                  onChange={e => set(f.key, e.target.value)}
+                  style={{ ...inputStyle, borderColor: border, colorScheme: "dark" }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Modal>
+  );
+}
+
+/* ── newId: stable-enough client id for locally created rows ── */
+export const newId = () => `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
+/* ── parseCSV: header row + quoted cells, used by ActionBar imports ── */
+export function parseCSV(text: string): Record<string, string>[] {
+  const rows: string[][] = [];
+  let cell = "", row: string[] = [], q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (c === '"') q = false;
+      else cell += c;
+    } else if (c === '"') q = true;
+    else if (c === ",") { row.push(cell); cell = ""; }
+    else if (c === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; }
+    else if (c !== "\r") cell += c;
+  }
+  if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+  if (rows.length < 2) return [];
+  const head = rows[0].map(h => h.trim());
+  return rows.slice(1).filter(r => r.some(c => c.trim() !== "")).map(r => {
+    const o: Record<string, string> = {};
+    head.forEach((h, i) => (o[h] = (r[i] ?? "").trim()));
+    return o;
+  });
 }
