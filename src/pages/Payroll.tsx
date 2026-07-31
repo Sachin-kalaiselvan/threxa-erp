@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Download, Trash2 } from "lucide-react";
-import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../ui/system";
+import { Edit2, Download, Trash2 } from "lucide-react";
+import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2, FormModal, newId } from "../ui/system";
+import type { FieldSpec } from "../ui/system";
+import { useLocation } from "react-router-dom";
 
 interface Pay { id: string; empId: string; name: string; dept: string; base: number; allowance: number; deduction: number; net: number; status: "Draft" | "Approved" | "Paid"; }
 
@@ -21,16 +23,50 @@ const SEED: Pay[] = [
 
 const SC: Record<Pay["status"], string> = { Draft: T.muted, Approved: T.blue, Paid: T.green };
 
+const FIELDS: readonly FieldSpec[] = [
+  { key: "empId", label: "Employee ID", placeholder: "EMP-013", required: true, half: true },
+  { key: "status", label: "Status", type: "select", options: ["Draft", "Approved", "Paid"], half: true },
+  { key: "name", label: "Employee name", required: true, half: true },
+  { key: "dept", label: "Department", type: "select", options: ["Production", "Quality", "Stores", "Dispatch", "Accounts", "Admin", "Maintenance"], half: true },
+  { key: "base", label: "Base salary (₹)", type: "number", half: true },
+  { key: "allowance", label: "Allowance (₹)", type: "number", half: true },
+  { key: "deduction", label: "Deduction (₹)", type: "number", half: true },
+] as const;
+
+const FILTER_OPTS = ["Draft", "Approved", "Paid"] as const;
+
 export default function Payroll() {
   const [rows, setRows] = useState(SEED);
   const [q, setQ] = useState("");
-  const f = rows.filter(r => r.name.toLowerCase().includes(q.toLowerCase()) || r.dept.toLowerCase().includes(q.toLowerCase()));
+  const loc = useLocation();
+  const [status, setStatus] = useState("All");
+  const [modal, setModal] = useState<{ mode: "new" | "edit"; row?: Pay } | null>(
+    (loc.state as { create?: boolean } | null)?.create ? { mode: "new" } : null
+  );
+
+  const save = (v: Record<string, any>) => {
+    const patch = { ...v, net: Number(v.base) + Number(v.allowance) - Number(v.deduction) };
+    setRows(p => modal?.mode === "edit" && modal.row
+      ? p.map(r => (r.id === modal.row!.id ? { ...r, ...patch } : r))
+      : [{ id: newId(), ...patch } as Pay, ...p]);
+    setModal(null);
+  };
+  const rowsF = status === "All" ? rows : rows.filter(r => r.status === status);
+  const f = rowsF.filter(r => r.name.toLowerCase().includes(q.toLowerCase()) || r.dept.toLowerCase().includes(q.toLowerCase()));
   const total = rows.reduce((s, r) => s + r.net, 0);
   const paid = rows.filter(r => r.status === "Paid").reduce((s, r) => s + r.net, 0);
 
   const exportCSV = () => {
     const csv = [["Emp ID", "Name", "Dept", "Base", "Allowance", "Deduction", "Net", "Status"], ...f.map(r => [r.empId, r.name, r.dept, r.base, r.allowance, r.deduction, r.net, r.status])].map(r => r.join(",")).join("\n");
     const a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv); a.download = "payroll-jul-2026.csv"; a.click();
+  };
+
+  const payslip = (r: Pay) => {
+    const csv = [
+      ["Payslip", "July 2026"], ["Employee", r.name], ["Employee ID", r.empId], ["Department", r.dept],
+      ["Base", r.base], ["Allowance", r.allowance], ["Deduction", r.deduction], ["Net Pay", r.net], ["Status", r.status],
+    ].map(x => x.join(",")).join("\n");
+    const a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv); a.download = `payslip-${r.empId}.csv`; a.click();
   };
 
   return (
@@ -40,7 +76,14 @@ export default function Payroll() {
         { label: "Disbursed", value: `₹${(paid / 100000).toFixed(2)}L`, sub: `${Math.round(paid / total * 100)}% complete`, spark: [0, 0.2, 0.3, 0.4, 0.5, 0.52], color: T.green },
         { label: "Pending", value: `₹${((total - paid) / 100000).toFixed(2)}L`, sub: `${rows.filter(r => r.status !== "Paid").length} employees`, spark: [1.28, 1.1, 0.98, 0.9, 0.8, 0.76], color: T.amber },
       ]} />
-      <ActionBar search={q} onSearch={setQ} placeholder="Search employees…" primaryLabel="Run Payroll" onExport={exportCSV} />
+      <ActionBar
+        search={q} onSearch={setQ}
+        placeholder="Search employees…"
+        primaryLabel="Run Payroll"
+        onPrimary={() => setModal({ mode: "new" })}
+        filterLabel="Status" filterValue={status} onFilter={setStatus} filterOptions={FILTER_OPTS}
+        onExport={exportCSV}
+      />
       <DataTable
         cols={[
           { key: "name", label: "Employee" }, { key: "base", label: "Base", align: "right" },
@@ -57,12 +100,24 @@ export default function Payroll() {
           status: <Badge label={r.status} color={SC[r.status]} />,
           act: (
             <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-              <button title="Payslip" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Download size={14} /></button>
+              <button onClick={() => setModal({ mode: "edit", row: r })} title="Edit" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Edit2 size={14} /></button>
+              <button title="Download payslip" onClick={() => payslip(r)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Download size={14} /></button>
               <button onClick={() => setRows(p => p.filter(x => x.id !== r.id))} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Trash2 size={14} /></button>
             </div>
           ),
         }))}
       />
+      {modal && (
+        <FormModal
+          title={modal.mode === "edit" ? "Edit Payslip" : "Run Payroll"}
+          subtitle={modal.mode === "edit" ? "Update this payslip" : "Add a new payslip"}
+          fields={FIELDS}
+          initial={modal.row}
+          submitLabel={modal.mode === "edit" ? "Save changes" : "Create"}
+          onClose={() => setModal(null)}
+          onSave={save}
+        />
+      )}
     </PageShell>
   );
 }

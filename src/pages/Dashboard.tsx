@@ -1,10 +1,14 @@
 import {
   T, Card, CardTitle, Badge, Dot, Progress, KPIStrip, Btn, Cell2,
+  Menu, MenuItem, Modal, Toggle,
 } from "../ui/system";
 import {
   Search, Bell, Plus, FileText, ShoppingCart, Zap, Truck, Receipt, Package,
+  User, Settings, LogOut, CheckCheck, BellOff,
 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 /* ═══ Threxa ERP · Operations Dashboard ═══
    Answers one question: "What needs my attention right now?"
@@ -12,6 +16,20 @@ import { useState } from "react";
 
 export default function Dashboard() {
   const [q, setQ] = useState("");
+  const nav = useNavigate();
+
+  /* ── header interaction state ── */
+  const [bellOpen, setBellOpen] = useState(false);
+  const [userOpen, setUserOpen] = useState(false);
+  const [readIds, setReadIds] = useState<number[]>([]);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [prefs, setPrefs] = useState({ alerts: true, lowStock: true, digest: false });
+
+  const signOut = async () => {
+    setUserOpen(false);
+    await supabase.auth.signOut();
+  };
   const h = new Date().getHours();
   const grt = h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : "Good Evening";
   const shift = h < 14 ? "Morning Shift" : h < 22 ? "Evening Shift" : "Night Shift";
@@ -29,13 +47,15 @@ export default function Dashboard() {
   ] as const;
 
   const attention = [
-    [T.red,   "4 quotations pending approval", "Oldest waiting 3 days"],
-    [T.amber, "Machine 2 overloaded — 94% for 6 hrs", "Consider load balancing"],
-    [T.red,   "Kraft Paper below reorder level", "1,100 Kg vs min 1,500 Kg"],
-    [T.amber, "Dispatch #240 delayed", "Vehicle breakdown — ETA +2 hrs"],
-    [T.green, "Payroll completed for July", "42 employees processed"],
-    [T.blue,  "Supplier payment due tomorrow", "Shree Paper Mills — ₹3,25,000"],
+    [T.red,   "4 quotations pending approval", "Oldest waiting 3 days", "/quotations"],
+    [T.amber, "Machine 2 overloaded — 94% for 6 hrs", "Consider load balancing", "/production"],
+    [T.red,   "Kraft Paper below reorder level", "1,100 Kg vs min 1,500 Kg", "/inventory"],
+    [T.amber, "Dispatch #240 delayed", "Vehicle breakdown — ETA +2 hrs", "/dispatch"],
+    [T.green, "Payroll completed for July", "42 employees processed", "/payroll"],
+    [T.blue,  "Supplier payment due tomorrow", "Shree Paper Mills — ₹3,25,000", "/cashbook"],
   ] as const;
+
+  const unread = attention.filter((_, i) => !readIds.includes(i)).length;
 
   const workOrders = [
     ["WO-1258", "Ramesh Traders", "Printing",     "Flexo Printer",    60, "Ajay"],
@@ -84,8 +104,12 @@ export default function Dashboard() {
   ] as const;
 
   const quick = [
-    ["New Quotation", FileText], ["Sales Order", ShoppingCart], ["Work Order", Zap],
-    ["Dispatch", Truck], ["Invoice", Receipt], ["Purchase Order", Package],
+    ["New Quotation",  FileText,     "/quotations"],
+    ["Sales Order",    ShoppingCart, "/orders"],
+    ["Work Order",     Zap,          "/production"],
+    ["Dispatch",       Truck,        "/dispatch"],
+    ["Invoice",        Receipt,      "/invoices"],
+    ["Purchase Order", Package,      "/inventory"],
   ] as const;
 
   /* ── shared row style ── */
@@ -113,11 +137,82 @@ export default function Dashboard() {
                 style={{ height: 34, width: 210, background: T.card, border: `1px solid ${T.line}`, borderRadius: 8, padding: "0 44px 0 30px", fontSize: 12.5, color: T.text, outline: "none", boxSizing: "border-box" }} />
               <kbd style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: T.muted, background: T.card2, border: `1px solid ${T.line}`, borderRadius: 4, padding: "1px 5px" }}>Ctrl K</kbd>
             </div>
-            <button style={{ position: "relative", width: 32, height: 32, borderRadius: 8, background: "none", border: "none", cursor: "pointer", color: T.sub, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Bell size={16} />
-              <span style={{ position: "absolute", top: 5, right: 6, width: 7, height: 7, borderRadius: "50%", background: T.red, border: `2px solid ${T.bg}` }} />
-            </button>
-            <div style={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg,#5B4FDB,#9B6BF7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer" }}>S</div>
+            {/* ── notifications ── */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => { setBellOpen(o => !o); setUserOpen(false); }}
+                aria-label="Notifications"
+                style={{ position: "relative", width: 32, height: 32, borderRadius: 8, background: bellOpen ? T.card : "none", border: "none", cursor: "pointer", color: bellOpen ? T.text : T.sub, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Bell size={16} />
+                {unread > 0 && <span style={{ position: "absolute", top: 5, right: 6, width: 7, height: 7, borderRadius: "50%", background: T.red, border: `2px solid ${T.bg}` }} />}
+              </button>
+
+              <Menu open={bellOpen} onClose={() => setBellOpen(false)} width={330}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderBottom: `1px solid ${T.lineSoft}` }}>
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: T.text }}>Notifications</span>
+                  {unread > 0 && (
+                    <button onClick={() => setReadIds(attention.map((_, i) => i))}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", color: T.accent, fontSize: 11.5, padding: 0 }}>
+                      <CheckCheck size={13} /> Mark all read
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ maxHeight: 340, overflowY: "auto" }}>
+                  {attention.map(([color, title, sub2, route], i) => {
+                    const isRead = readIds.includes(i);
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => { setReadIds(p => p.includes(i) ? p : [...p, i]); setBellOpen(false); nav(route as string); }}
+                        style={{ width: "100%", display: "flex", gap: 10, alignItems: "flex-start", padding: "11px 14px", background: "none", border: "none", borderBottom: `1px solid ${T.lineSoft}`, cursor: "pointer", textAlign: "left", opacity: isRead ? 0.5 : 1 }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.035)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "none")}>
+                        <span style={{ marginTop: 5, flexShrink: 0 }}><Dot color={color as string} /></span>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: "block", fontSize: 12.5, color: T.text, fontWeight: isRead ? 400 : 500 }}>{title}</span>
+                          <span style={{ display: "block", fontSize: 11, color: T.muted, marginTop: 2 }}>{sub2}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ padding: "9px 14px", background: T.card2, display: "flex", alignItems: "center", gap: 7 }}>
+                  <BellOff size={12} color={T.muted} />
+                  <span style={{ fontSize: 11, color: T.muted }}>
+                    {unread === 0 ? "You're all caught up" : `${unread} unread`}
+                  </span>
+                </div>
+              </Menu>
+            </div>
+
+            {/* ── account ── */}
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => { setUserOpen(o => !o); setBellOpen(false); }}
+                aria-label="Account"
+                style={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg,#5B4FDB,#9B6BF7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff", cursor: "pointer", border: userOpen ? `2px solid ${T.accent}` : "none", padding: 0 }}>
+                S
+              </button>
+
+              <Menu open={userOpen} onClose={() => setUserOpen(false)} width={250}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderBottom: `1px solid ${T.lineSoft}` }}>
+                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "linear-gradient(135deg,#5B4FDB,#9B6BF7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>S</div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Sachin K.</div>
+                    <div style={{ fontSize: 11, color: T.muted, overflow: "hidden", textOverflow: "ellipsis" }}>Admin · Bengaluru Plant</div>
+                  </div>
+                </div>
+                <div style={{ padding: "5px 0" }}>
+                  <MenuItem icon={User} label="Profile" onClick={() => { setUserOpen(false); setProfileOpen(true); }} />
+                  <MenuItem icon={Settings} label="Settings" onClick={() => { setUserOpen(false); setSettingsOpen(true); }} />
+                </div>
+                <div style={{ borderTop: `1px solid ${T.lineSoft}`, padding: "5px 0" }}>
+                  <MenuItem icon={LogOut} label="Sign out" danger onClick={signOut} />
+                </div>
+              </Menu>
+            </div>
           </div>
         </div>
       </div>
@@ -136,8 +231,10 @@ export default function Dashboard() {
 
         {/* ═ Quick actions ═ */}
         <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-          {quick.map(([label, Icon]) => (
-            <Btn key={label as string} icon={Plus}>{label}</Btn>
+          {quick.map(([label, , route]) => (
+            <Btn key={label as string} icon={Plus} onClick={() => nav(route as string, { state: { create: true } })}>
+              {label}
+            </Btn>
           ))}
         </div>
 
@@ -165,12 +262,17 @@ export default function Dashboard() {
           <Card>
             <CardTitle>Needs Attention</CardTitle>
             <div style={{ paddingBottom: 6 }}>
-              {attention.map(([color, title, sub], i) => (
-                <div key={i} style={{ ...row, borderBottom: i === attention.length - 1 ? "none" : `1px solid ${T.lineSoft}` }}>
+              {attention.map(([color, title, sub2, route], i) => (
+                <div
+                  key={i}
+                  onClick={() => nav(route as string)}
+                  style={{ ...row, cursor: "pointer", borderBottom: i === attention.length - 1 ? "none" : `1px solid ${T.lineSoft}` }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                   <Dot color={color as string} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, color: T.text }}>{title}</div>
-                    <div style={{ fontSize: 11, color: T.muted, marginTop: 1 }}>{sub}</div>
+                    <div style={{ fontSize: 11, color: T.muted, marginTop: 1 }}>{sub2}</div>
                   </div>
                 </div>
               ))}
@@ -307,6 +409,44 @@ export default function Dashboard() {
         </div>
 
       </div>
+      {profileOpen && (
+        <Modal title="Profile" subtitle="Your account details" width={520}
+          onClose={() => setProfileOpen(false)}
+          footer={<Btn variant="primary" onClick={() => setProfileOpen(false)}>Done</Btn>}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, paddingBottom: 16, marginBottom: 4, borderBottom: `1px solid ${T.lineSoft}` }}>
+            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "linear-gradient(135deg,#5B4FDB,#9B6BF7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, fontWeight: 700, color: "#fff" }}>S</div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: T.text }}>Sachin K.</div>
+              <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>sachin@theingredientlist.co</div>
+            </div>
+          </div>
+          {([
+            ["Role", "Admin — full access"],
+            ["Plant", "Bengaluru"],
+            ["Financial year", "2026–27"],
+            ["Shift", shift],
+          ] as const).map(([k, val]) => (
+            <div key={k} style={{ display: "flex", padding: "10px 0", borderBottom: `1px solid ${T.lineSoft}` }}>
+              <span style={{ flex: 1, fontSize: 12.5, color: T.muted }}>{k}</span>
+              <span style={{ fontSize: 12.5, color: T.text, fontWeight: 500 }}>{val}</span>
+            </div>
+          ))}
+        </Modal>
+      )}
+
+      {settingsOpen && (
+        <Modal title="Settings" subtitle="Notification preferences" width={520}
+          onClose={() => setSettingsOpen(false)}
+          footer={<Btn variant="primary" onClick={() => setSettingsOpen(false)}>Save changes</Btn>}>
+          <Toggle on={prefs.alerts} onChange={v => setPrefs(p => ({ ...p, alerts: v }))}
+            label="Operational alerts" sub="Machine faults, delayed dispatches" />
+          <Toggle on={prefs.lowStock} onChange={v => setPrefs(p => ({ ...p, lowStock: v }))}
+            label="Low stock warnings" sub="Notify when reels fall below reorder level" />
+          <Toggle on={prefs.digest} onChange={v => setPrefs(p => ({ ...p, digest: v }))}
+            label="Daily email digest" sub="Production summary at 8:00 PM" />
+        </Modal>
+      )}
+
     </div>
   );
 }

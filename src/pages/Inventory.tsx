@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
-import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../ui/system";
+import { Edit2, Trash2 } from "lucide-react";
+import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2, FormModal, newId } from "../ui/system";
+import type { FieldSpec } from "../ui/system";
+import { useLocation } from "react-router-dom";
 
 interface Item { id: string; name: string; gsm: number; bf: number; ply: string; kg: number; min: number; reams: number; location: string; updated: string; }
 
@@ -17,10 +19,38 @@ const SEED: Item[] = [
   { id: "10", name: "Flexo Ink — Cyan",    gsm: 0,   bf: 0,  ply: "—",     kg: 85,   min: 120,  reams: 0,  location: "Godown C · Bay 02",  updated: "28 Jul" },
 ];
 
+const FIELDS: readonly FieldSpec[] = [
+  { key: "name", label: "Material", placeholder: "Test Liner", required: true },
+  { key: "gsm", label: "GSM", type: "number", half: true },
+  { key: "bf", label: "Bursting factor", type: "number", half: true },
+  { key: "ply", label: "Used in", type: "select", options: ["3 Ply", "5 Ply", "7 Ply", "—"], half: true },
+  { key: "reams", label: "Reams", type: "number", half: true },
+  { key: "kg", label: "Stock (Kg)", type: "number", half: true },
+  { key: "min", label: "Reorder level (Kg)", type: "number", half: true },
+  { key: "location", label: "Location", placeholder: "Godown A · Rack 01", half: true },
+  { key: "updated", label: "Last updated", placeholder: "31 Jul", half: true },
+] as const;
+
+const FILTER_OPTS = ["OK", "Low", "Critical"] as const;
+
 export default function Inventory() {
   const [rows, setRows] = useState(SEED);
   const [q, setQ] = useState("");
-  const f = rows.filter(r => r.name.toLowerCase().includes(q.toLowerCase()) || r.location.toLowerCase().includes(q.toLowerCase()));
+  const loc = useLocation();
+  const [status, setStatus] = useState("All");
+  const [modal, setModal] = useState<{ mode: "new" | "edit"; row?: Item } | null>(
+    (loc.state as { create?: boolean } | null)?.create ? { mode: "new" } : null
+  );
+
+  const save = (v: Record<string, any>) => {
+    const patch = v;
+    setRows(p => modal?.mode === "edit" && modal.row
+      ? p.map(r => (r.id === modal.row!.id ? { ...r, ...patch } : r))
+      : [{ id: newId(), ...patch } as Item, ...p]);
+    setModal(null);
+  };
+  const rowsF = status === "All" ? rows : rows.filter(r => (status === "OK" ? r.kg >= r.min : status === "Low" ? r.kg >= r.min * 0.9 && r.kg < r.min : r.kg < r.min * 0.9));
+  const f = rowsF.filter(r => r.name.toLowerCase().includes(q.toLowerCase()) || r.location.toLowerCase().includes(q.toLowerCase()));
   const low = rows.filter(r => r.kg < r.min).length;
   const total = rows.reduce((s, r) => s + r.kg, 0);
 
@@ -36,13 +66,20 @@ export default function Inventory() {
         { label: "Below Reorder", value: String(low), up: false, sub: "need purchase orders", spark: [1, 2, 2, 3, 3, 3], color: T.red },
         { label: "Health Score", value: `${Math.round((rows.length - low) / rows.length * 100)}%`, sub: "stocked adequately", spark: [90, 85, 80, 70, 60, 40], color: T.amber },
       ]} />
-      <ActionBar search={q} onSearch={setQ} placeholder="Search materials, locations…" primaryLabel="Add Stock" onExport={exportCSV} />
+      <ActionBar
+        search={q} onSearch={setQ}
+        placeholder="Search materials, locations…"
+        primaryLabel="Add Stock"
+        onPrimary={() => setModal({ mode: "new" })}
+        filterLabel="Level" filterValue={status} onFilter={setStatus} filterOptions={FILTER_OPTS}
+        onExport={exportCSV}
+      />
       <DataTable
         cols={[
           { key: "name", label: "Material" }, { key: "spec", label: "Spec" },
           { key: "stock", label: "Stock", align: "right" }, { key: "reams", label: "Reams", align: "center" },
           { key: "location", label: "Location" }, { key: "level", label: "Level", align: "center" },
-          { key: "act", label: "", align: "right", width: 50 },
+          { key: "act", label: "", align: "right", width: 80 },
         ]}
         rows={f.map(r => {
           const ok = r.kg >= r.min, near = r.kg >= r.min * 0.9;
@@ -53,10 +90,26 @@ export default function Inventory() {
             reams: <span style={{ fontVariantNumeric: "tabular-nums" }}>{r.reams}</span>,
             location: <span style={{ fontSize: 12.5, color: T.muted }}>{r.location}</span>,
             level: <Badge label={ok ? "OK" : near ? "Low" : "Critical"} color={ok ? T.green : near ? T.amber : T.red} />,
-            act: <button onClick={() => setRows(p => p.filter(x => x.id !== r.id))} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Trash2 size={14} /></button>,
+            act: (
+              <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+                <button onClick={() => setModal({ mode: "edit", row: r })} title="Edit" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Edit2 size={14} /></button>
+                <button onClick={() => setRows(p => p.filter(x => x.id !== r.id))} title="Delete" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Trash2 size={14} /></button>
+              </div>
+            ),
           };
         })}
       />
+      {modal && (
+        <FormModal
+          title={modal.mode === "edit" ? "Edit Material" : "Add Stock"}
+          subtitle={modal.mode === "edit" ? "Update this material" : "Add a new material"}
+          fields={FIELDS}
+          initial={modal.row}
+          submitLabel={modal.mode === "edit" ? "Save changes" : "Create"}
+          onClose={() => setModal(null)}
+          onSave={save}
+        />
+      )}
     </PageShell>
   );
 }

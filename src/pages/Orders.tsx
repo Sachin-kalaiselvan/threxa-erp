@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Edit2, Trash2 } from "lucide-react";
-import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../ui/system";
+import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2, FormModal, newId } from "../ui/system";
+import type { FieldSpec } from "../ui/system";
+import { useLocation } from "react-router-dom";
 
 interface Order { id: string; no: string; customer: string; contact: string; date: string; due: string; qty: number; sqft: string; amount: number; status: "Pending" | "Confirmed" | "In Production" | "Shipped" | "Delivered"; }
 
@@ -21,10 +23,38 @@ const SEED: Order[] = [
 
 const SC: Record<Order["status"], string> = { Pending: T.amber, Confirmed: T.blue, "In Production": T.accent, Shipped: T.blue, Delivered: T.green };
 
+const FIELDS: readonly FieldSpec[] = [
+  { key: "no", label: "Order no.", placeholder: "ORD-013", required: true, half: true },
+  { key: "status", label: "Status", type: "select", options: ["Pending", "Confirmed", "In Production", "Shipped", "Delivered"], half: true },
+  { key: "customer", label: "Customer", required: true },
+  { key: "contact", label: "Contact person", half: true },
+  { key: "date", label: "Order date", placeholder: "31 Jul", half: true },
+  { key: "due", label: "Delivery date", placeholder: "07 Aug", half: true },
+  { key: "qty", label: "Quantity (boxes)", type: "number", half: true },
+  { key: "sqft", label: "Area", placeholder: "12,400 Sq.Ft.", half: true },
+  { key: "amount", label: "Order value (₹)", type: "number", half: true },
+] as const;
+
+const FILTER_OPTS = ["Pending", "Confirmed", "In Production", "Shipped", "Delivered"] as const;
+
 export default function Orders() {
   const [rows, setRows] = useState(SEED);
   const [q, setQ] = useState("");
-  const f = rows.filter(r => r.no.toLowerCase().includes(q.toLowerCase()) || r.customer.toLowerCase().includes(q.toLowerCase()));
+  const loc = useLocation();
+  const [status, setStatus] = useState("All");
+  const [modal, setModal] = useState<{ mode: "new" | "edit"; row?: Order } | null>(
+    (loc.state as { create?: boolean } | null)?.create ? { mode: "new" } : null
+  );
+
+  const save = (v: Record<string, any>) => {
+    const patch = v;
+    setRows(p => modal?.mode === "edit" && modal.row
+      ? p.map(r => (r.id === modal.row!.id ? { ...r, ...patch } : r))
+      : [{ id: newId(), ...patch } as Order, ...p]);
+    setModal(null);
+  };
+  const rowsF = status === "All" ? rows : rows.filter(r => r.status === status);
+  const f = rowsF.filter(r => r.no.toLowerCase().includes(q.toLowerCase()) || r.customer.toLowerCase().includes(q.toLowerCase()));
   const rev = rows.reduce((s, r) => s + r.amount, 0);
 
   const exportCSV = () => {
@@ -39,7 +69,14 @@ export default function Orders() {
         { label: "Pending", value: String(rows.filter(r => r.status === "Pending").length), sub: "awaiting confirmation", spark: [2, 2, 1, 1, 1, 1], color: T.amber },
         { label: "Order Value", value: `₹${(rev / 100000).toFixed(1)}L`, delta: "+9%", sub: "vs last week", spark: [1.8, 2.0, 2.2, 2.3, 2.5, 2.6], color: T.green },
       ]} />
-      <ActionBar search={q} onSearch={setQ} placeholder="Search orders…" primaryLabel="New Order" onExport={exportCSV} />
+      <ActionBar
+        search={q} onSearch={setQ}
+        placeholder="Search orders…"
+        primaryLabel="New Order"
+        onPrimary={() => setModal({ mode: "new" })}
+        filterLabel="Status" filterValue={status} onFilter={setStatus} filterOptions={FILTER_OPTS}
+        onExport={exportCSV}
+      />
       <DataTable
         cols={[
           { key: "no", label: "Order" }, { key: "customer", label: "Customer" },
@@ -56,12 +93,23 @@ export default function Orders() {
           status: <Badge label={r.status} color={SC[r.status]} />,
           act: (
             <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-              <button style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Edit2 size={14} /></button>
+              <button onClick={() => setModal({ mode: "edit", row: r })} title="Edit" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Edit2 size={14} /></button>
               <button onClick={() => setRows(p => p.filter(x => x.id !== r.id))} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Trash2 size={14} /></button>
             </div>
           ),
         }))}
       />
+      {modal && (
+        <FormModal
+          title={modal.mode === "edit" ? "Edit Order" : "New Order"}
+          subtitle={modal.mode === "edit" ? "Update this order" : "Add a new order"}
+          fields={FIELDS}
+          initial={modal.row}
+          submitLabel={modal.mode === "edit" ? "Save changes" : "Create"}
+          onClose={() => setModal(null)}
+          onSave={save}
+        />
+      )}
     </PageShell>
   );
 }

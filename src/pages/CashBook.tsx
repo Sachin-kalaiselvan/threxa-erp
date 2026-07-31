@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
-import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../ui/system";
+import { Edit2, Trash2 } from "lucide-react";
+import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2, FormModal, newId } from "../ui/system";
+import type { FieldSpec } from "../ui/system";
+import { useLocation } from "react-router-dom";
 
 interface Txn { id: string; date: string; desc: string; ref: string; category: string; type: "Credit" | "Debit"; amount: number; balance: number; }
 
@@ -23,10 +25,47 @@ const SEED: Txn[] = [
   { id: "16", date: "29 Jul", desc: "Payment received — Nandi Agro Exports", ref: "RCPT-0455", category: "Sales", type: "Credit", amount: 208000, balance: 738600 },
 ];
 
+const FIELDS: readonly FieldSpec[] = [
+  { key: "date", label: "Date", placeholder: "31 Jul", required: true, half: true },
+  { key: "type", label: "Type", type: "select", options: ["Credit", "Debit"], half: true },
+  { key: "desc", label: "Description", placeholder: "Payment received — Ramesh Traders", required: true },
+  { key: "ref", label: "Reference", placeholder: "RCPT-0456", half: true },
+  { key: "category", label: "Category", type: "select", options: ["Sales", "Purchases", "Utilities", "Logistics", "Maintenance", "Payroll", "Statutory", "Rent"], half: true },
+  { key: "amount", label: "Amount (₹)", type: "number", half: true },
+] as const;
+
+const FILTER_OPTS = ["Credit", "Debit"] as const;
+
+const OPENING = 250000;
+
+const recalc = (list: Txn[]): Txn[] => {
+  let bal = OPENING;
+  return list.map(t => {
+    bal = t.type === "Credit" ? bal + Number(t.amount) : bal - Number(t.amount);
+    return { ...t, balance: bal };
+  });
+};
+
 export default function CashBook() {
   const [rows, setRows] = useState(SEED);
   const [q, setQ] = useState("");
-  const f = rows.filter(r => r.desc.toLowerCase().includes(q.toLowerCase()) || r.category.toLowerCase().includes(q.toLowerCase()) || r.ref.toLowerCase().includes(q.toLowerCase()));
+  const loc = useLocation();
+  const [status, setStatus] = useState("All");
+  const [modal, setModal] = useState<{ mode: "new" | "edit"; row?: Txn } | null>(
+    (loc.state as { create?: boolean } | null)?.create ? { mode: "new" } : null
+  );
+
+  const save = (v: Record<string, any>) => {
+    const patch = v;
+    setRows(p => recalc(
+      modal?.mode === "edit" && modal.row
+        ? p.map(r => (r.id === modal.row!.id ? { ...r, ...patch } : r))
+        : [...p, { id: newId(), balance: 0, ...patch } as Txn]
+    ));
+    setModal(null);
+  };
+  const rowsF = status === "All" ? rows : rows.filter(r => r.type === status);
+  const f = rowsF.filter(r => r.desc.toLowerCase().includes(q.toLowerCase()) || r.category.toLowerCase().includes(q.toLowerCase()) || r.ref.toLowerCase().includes(q.toLowerCase()));
   const credit = rows.filter(r => r.type === "Credit").reduce((s, r) => s + r.amount, 0);
   const debit  = rows.filter(r => r.type === "Debit").reduce((s, r) => s + r.amount, 0);
   const balance = rows.length ? rows[rows.length - 1].balance : 0;
@@ -43,12 +82,19 @@ export default function CashBook() {
         { label: "Receipts", value: `₹${(credit / 100000).toFixed(2)}L`, delta: "+12%", sub: "July 2026", spark: [0.7, 0.75, 0.75, 2.25, 2.25, 2.25], color: T.green },
         { label: "Payments", value: `₹${(debit / 1000).toFixed(0)}k`, sub: "July 2026", spark: [5, 5, 5, 5, 87, 87], color: T.red },
       ]} />
-      <ActionBar search={q} onSearch={setQ} placeholder="Search transactions…" primaryLabel="New Transaction" onExport={exportCSV} />
+      <ActionBar
+        search={q} onSearch={setQ}
+        placeholder="Search transactions…"
+        primaryLabel="New Transaction"
+        onPrimary={() => setModal({ mode: "new" })}
+        filterLabel="Type" filterValue={status} onFilter={setStatus} filterOptions={FILTER_OPTS}
+        onExport={exportCSV}
+      />
       <DataTable
         cols={[
           { key: "date", label: "Date" }, { key: "desc", label: "Description" },
           { key: "category", label: "Category", align: "center" }, { key: "amount", label: "Amount", align: "right" },
-          { key: "balance", label: "Balance", align: "right" }, { key: "act", label: "", align: "right", width: 50 },
+          { key: "balance", label: "Balance", align: "right" }, { key: "act", label: "", align: "right", width: 80 },
         ]}
         rows={f.map(r => ({
           date: <span style={{ color: T.muted, fontSize: 12.5, whiteSpace: "nowrap" }}>{r.date}</span>,
@@ -56,9 +102,25 @@ export default function CashBook() {
           category: <Badge label={r.category} color={r.category === "Sales" ? T.green : r.category === "Purchases" ? T.blue : T.muted} />,
           amount: <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, color: r.type === "Credit" ? T.green : T.red }}>{r.type === "Credit" ? "+" : "−"}₹{r.amount.toLocaleString("en-IN")}</span>,
           balance: <span style={{ fontVariantNumeric: "tabular-nums", color: T.text, fontWeight: 600 }}>₹{r.balance.toLocaleString("en-IN")}</span>,
-          act: <button onClick={() => setRows(p => p.filter(x => x.id !== r.id))} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Trash2 size={14} /></button>,
+          act: (
+            <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+              <button onClick={() => setModal({ mode: "edit", row: r })} title="Edit" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Edit2 size={14} /></button>
+              <button onClick={() => setRows(p => recalc(p.filter(x => x.id !== r.id)))} title="Delete" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Trash2 size={14} /></button>
+            </div>
+          ),
         }))}
       />
+      {modal && (
+        <FormModal
+          title={modal.mode === "edit" ? "Edit Transaction" : "New Transaction"}
+          subtitle={modal.mode === "edit" ? "Update this transaction" : "Add a new transaction"}
+          fields={FIELDS}
+          initial={modal.row}
+          submitLabel={modal.mode === "edit" ? "Save changes" : "Create"}
+          onClose={() => setModal(null)}
+          onSave={save}
+        />
+      )}
     </PageShell>
   );
 }

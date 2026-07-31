@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Edit2, Trash2 } from "lucide-react";
-import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../ui/system";
+import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2, FormModal, newId } from "../ui/system";
+import type { FieldSpec } from "../ui/system";
+import { useLocation } from "react-router-dom";
 
 interface Product { id: string; code: string; name: string; gsm: number; bf: number; ply: string; weight: number; price: number; stock: number; }
 
@@ -17,11 +19,43 @@ const SEED: Product[] = [
   { id: "10", code: "PRD-010", name: "Printed Retail Shelf Box", gsm: 170, bf: 35, ply: "5 Ply", weight: 390,  price: 58,  stock: 220 },
 ];
 
+const FIELDS: readonly FieldSpec[] = [
+  { key: "code", label: "Product code", placeholder: "PRD-011", required: true, half: true },
+  { key: "ply", label: "Ply", type: "select", options: ["3 Ply", "5 Ply", "7 Ply"], half: true },
+  { key: "name", label: "Product name", placeholder: "Corrugated Box A4", required: true },
+  { key: "gsm", label: "GSM", type: "number", half: true },
+  { key: "bf", label: "Bursting factor", type: "number", half: true },
+  { key: "weight", label: "Unit weight (g)", type: "number", half: true },
+  { key: "price", label: "Unit price (₹)", type: "number", half: true },
+  { key: "stock", label: "Stock (units)", type: "number", half: true },
+] as const;
+
+const FILTER_OPTS = ["Healthy", "Low", "Critical"] as const;
+
 export default function Products() {
   const [rows, setRows] = useState(SEED);
   const [q, setQ] = useState("");
-  const f = rows.filter(r => r.name.toLowerCase().includes(q.toLowerCase()) || r.code.toLowerCase().includes(q.toLowerCase()));
+  const loc = useLocation();
+  const [status, setStatus] = useState("All");
+  const [modal, setModal] = useState<{ mode: "new" | "edit"; row?: Product } | null>(
+    (loc.state as { create?: boolean } | null)?.create ? { mode: "new" } : null
+  );
+
+  const save = (v: Record<string, any>) => {
+    const patch = v;
+    setRows(p => modal?.mode === "edit" && modal.row
+      ? p.map(r => (r.id === modal.row!.id ? { ...r, ...patch } : r))
+      : [{ id: newId(), ...patch } as Product, ...p]);
+    setModal(null);
+  };
+  const rowsF = status === "All" ? rows : rows.filter(r => (status === "Healthy" ? r.stock > 200 : status === "Low" ? r.stock > 100 && r.stock <= 200 : r.stock <= 100));
+  const f = rowsF.filter(r => r.name.toLowerCase().includes(q.toLowerCase()) || r.code.toLowerCase().includes(q.toLowerCase()));
   const value = rows.reduce((s, r) => s + r.price * r.stock, 0);
+
+  const exportCSV = () => {
+    const csv = [["Code", "Name", "GSM", "BF", "Ply", "Weight", "Price", "Stock"], ...f.map(r => [r.code, r.name, r.gsm, r.bf, r.ply, r.weight, r.price, r.stock])].map(r => r.join(",")).join("\n");
+    const a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv); a.download = "products.csv"; a.click();
+  };
 
   return (
     <PageShell title="Products" subtitle="Product catalogue and specifications" meta={[`${rows.length} SKUs`, `₹${(value / 1000).toFixed(0)}k stock value`]}>
@@ -30,7 +64,14 @@ export default function Products() {
         { label: "Units in Stock", value: rows.reduce((s, r) => s + r.stock, 0).toLocaleString("en-IN"), sub: "across all SKUs", spark: [700, 750, 800, 820, 850, 880], color: T.blue },
         { label: "Stock Value", value: `₹${(value / 1000).toFixed(0)}k`, delta: "+4%", sub: "at list price", spark: [30, 32, 33, 34, 35, 36], color: T.green },
       ]} />
-      <ActionBar search={q} onSearch={setQ} placeholder="Search products…" primaryLabel="New Product" />
+      <ActionBar
+        search={q} onSearch={setQ}
+        placeholder="Search products…"
+        primaryLabel="New Product"
+        onPrimary={() => setModal({ mode: "new" })}
+        filterLabel="Stock" filterValue={status} onFilter={setStatus} filterOptions={FILTER_OPTS}
+        onExport={exportCSV}
+      />
       <DataTable
         cols={[
           { key: "code", label: "Product" }, { key: "spec", label: "Specification" },
@@ -45,12 +86,23 @@ export default function Products() {
           stock: <Badge label={String(r.stock)} color={r.stock > 200 ? T.green : r.stock > 100 ? T.amber : T.red} />,
           act: (
             <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-              <button style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Edit2 size={14} /></button>
+              <button onClick={() => setModal({ mode: "edit", row: r })} title="Edit" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Edit2 size={14} /></button>
               <button onClick={() => setRows(p => p.filter(x => x.id !== r.id))} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Trash2 size={14} /></button>
             </div>
           ),
         }))}
       />
+      {modal && (
+        <FormModal
+          title={modal.mode === "edit" ? "Edit Product" : "New Product"}
+          subtitle={modal.mode === "edit" ? "Update this product" : "Add a new product"}
+          fields={FIELDS}
+          initial={modal.row}
+          submitLabel={modal.mode === "edit" ? "Save changes" : "Create"}
+          onClose={() => setModal(null)}
+          onSave={save}
+        />
+      )}
     </PageShell>
   );
 }

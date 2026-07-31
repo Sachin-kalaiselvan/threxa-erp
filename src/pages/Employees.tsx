@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Edit2, Trash2 } from "lucide-react";
-import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../ui/system";
+import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2, FormModal, newId } from "../ui/system";
+import type { FieldSpec } from "../ui/system";
+import { useLocation } from "react-router-dom";
 
 interface Emp { id: string; empId: string; name: string; position: string; dept: string; phone: string; email: string; joined: string; status: "Active" | "On Leave" | "Inactive"; }
 
@@ -21,10 +23,42 @@ const SEED: Emp[] = [
 
 const SC: Record<Emp["status"], string> = { Active: T.green, "On Leave": T.amber, Inactive: T.muted };
 
+const FIELDS: readonly FieldSpec[] = [
+  { key: "empId", label: "Employee ID", placeholder: "EMP-013", required: true, half: true },
+  { key: "status", label: "Status", type: "select", options: ["Active", "On Leave", "Inactive"], half: true },
+  { key: "name", label: "Full name", required: true },
+  { key: "position", label: "Designation", placeholder: "Machine Operator", half: true },
+  { key: "dept", label: "Department", type: "select", options: ["Production", "Quality", "Stores", "Dispatch", "Accounts", "Admin", "Maintenance"], half: true },
+  { key: "phone", label: "Phone", placeholder: "+91 98765 43222", half: true },
+  { key: "email", label: "Email", placeholder: "name@sps.in", half: true },
+  { key: "joined", label: "Joined", placeholder: "Jul 2026", half: true },
+] as const;
+
+const FILTER_OPTS = ["Active", "On Leave", "Inactive"] as const;
+
 export default function Employees() {
   const [rows, setRows] = useState(SEED);
   const [q, setQ] = useState("");
-  const f = rows.filter(r => r.name.toLowerCase().includes(q.toLowerCase()) || r.empId.toLowerCase().includes(q.toLowerCase()) || r.dept.toLowerCase().includes(q.toLowerCase()));
+  const loc = useLocation();
+  const [status, setStatus] = useState("All");
+  const [modal, setModal] = useState<{ mode: "new" | "edit"; row?: Emp } | null>(
+    (loc.state as { create?: boolean } | null)?.create ? { mode: "new" } : null
+  );
+
+  const save = (v: Record<string, any>) => {
+    const patch = v;
+    setRows(p => modal?.mode === "edit" && modal.row
+      ? p.map(r => (r.id === modal.row!.id ? { ...r, ...patch } : r))
+      : [{ id: newId(), ...patch } as Emp, ...p]);
+    setModal(null);
+  };
+  const rowsF = status === "All" ? rows : rows.filter(r => r.status === status);
+  const f = rowsF.filter(r => r.name.toLowerCase().includes(q.toLowerCase()) || r.empId.toLowerCase().includes(q.toLowerCase()) || r.dept.toLowerCase().includes(q.toLowerCase()));
+
+  const exportCSV = () => {
+    const csv = [["Emp ID", "Name", "Designation", "Department", "Phone", "Email", "Joined", "Status"], ...f.map(r => [r.empId, r.name, r.position, r.dept, r.phone, r.email, r.joined, r.status])].map(r => r.join(",")).join("\n");
+    const a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv); a.download = "employees.csv"; a.click();
+  };
 
   return (
     <PageShell title="Employees" subtitle="Team directory and roles" meta={[`${rows.length} employees`, `${new Set(rows.map(r => r.dept)).size} departments`]}>
@@ -33,7 +67,14 @@ export default function Employees() {
         { label: "Active Today", value: String(rows.filter(r => r.status === "Active").length), sub: `${rows.filter(r => r.status === "On Leave").length} on leave`, spark: [3, 3, 2, 2, 2, 2], color: T.green },
         { label: "Departments", value: String(new Set(rows.map(r => r.dept)).size), sub: [...new Set(rows.map(r => r.dept))].slice(0, 3).join(" · "), spark: [2, 2, 2, 2, 2, 2], color: T.blue },
       ]} />
-      <ActionBar search={q} onSearch={setQ} placeholder="Search employees…" primaryLabel="New Employee" />
+      <ActionBar
+        search={q} onSearch={setQ}
+        placeholder="Search employees…"
+        primaryLabel="New Employee"
+        onPrimary={() => setModal({ mode: "new" })}
+        filterLabel="Status" filterValue={status} onFilter={setStatus} filterOptions={FILTER_OPTS}
+        onExport={exportCSV}
+      />
       <DataTable
         cols={[
           { key: "name", label: "Employee" }, { key: "role", label: "Role" },
@@ -48,12 +89,23 @@ export default function Employees() {
           status: <Badge label={r.status} color={SC[r.status]} />,
           act: (
             <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-              <button style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Edit2 size={14} /></button>
+              <button onClick={() => setModal({ mode: "edit", row: r })} title="Edit" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Edit2 size={14} /></button>
               <button onClick={() => setRows(p => p.filter(x => x.id !== r.id))} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Trash2 size={14} /></button>
             </div>
           ),
         }))}
       />
+      {modal && (
+        <FormModal
+          title={modal.mode === "edit" ? "Edit Employee" : "New Employee"}
+          subtitle={modal.mode === "edit" ? "Update this employee" : "Add a new employee"}
+          fields={FIELDS}
+          initial={modal.row}
+          submitLabel={modal.mode === "edit" ? "Save changes" : "Create"}
+          onClose={() => setModal(null)}
+          onSave={save}
+        />
+      )}
     </PageShell>
   );
 }
