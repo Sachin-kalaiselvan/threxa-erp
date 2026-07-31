@@ -6,9 +6,18 @@ import { generateInvoicePDF } from "../utils/pdf";
 interface Invoice { id: string; no: string; customer: string; gst: string; amount: number; date: string; due: string; status: "Draft" | "Sent" | "Paid" | "Overdue"; }
 
 const SEED: Invoice[] = [
-  { id: "1", no: "INV-10021", customer: "Rajesh Enterprises", gst: "27AABCU9603R1Z5", amount: 75000,  date: "15 Jul", due: "14 Aug", status: "Sent" },
-  { id: "2", no: "INV-10022", customer: "Priya Packaging",    gst: "27AABCV9603R2Z5", amount: 150000, date: "16 Jul", due: "15 Aug", status: "Paid" },
-  { id: "3", no: "INV-10023", customer: "Kumar Industries",   gst: "27AABCW9603R3Z5", amount: 45000,  date: "10 Jun", due: "10 Jul", status: "Overdue" },
+  { id: "1",  no: "INV-10021", customer: "Rajesh Enterprises",    gst: "29AABCR9603R1Z5", amount: 75000,  date: "15 Jul", due: "14 Aug", status: "Sent" },
+  { id: "2",  no: "INV-10022", customer: "Priya Packaging",       gst: "29AABCV9603R2Z5", amount: 150000, date: "16 Jul", due: "15 Aug", status: "Paid" },
+  { id: "3",  no: "INV-10023", customer: "Kumar Industries",      gst: "29AABCW9603R3Z5", amount: 45000,  date: "10 Jun", due: "10 Jul", status: "Overdue" },
+  { id: "4",  no: "INV-10024", customer: "Ramesh Traders",        gst: "29AACCR4521M1Z9", amount: 640000, date: "18 Jul", due: "17 Aug", status: "Sent" },
+  { id: "5",  no: "INV-10025", customer: "Global Foods Pvt Ltd",  gst: "29AAGCG7712K1ZB", amount: 412000, date: "19 Jul", due: "18 Aug", status: "Paid" },
+  { id: "6",  no: "INV-10026", customer: "FreshMart Retail",      gst: "29AAFCF3390L1ZP", amount: 234000, date: "21 Jul", due: "20 Aug", status: "Sent" },
+  { id: "7",  no: "INV-10027", customer: "Bright Retail Chain",   gst: "29AABCB8821N1ZQ", amount: 306000, date: "22 Jul", due: "21 Aug", status: "Paid" },
+  { id: "8",  no: "INV-10028", customer: "Super Pack Industries", gst: "29AASCS1140P1ZR", amount: 195000, date: "23 Jul", due: "22 Aug", status: "Sent" },
+  { id: "9",  no: "INV-10029", customer: "Vettiyil Packaging",    gst: "32AAVCV2210Q1ZT", amount: 156000, date: "24 Jul", due: "23 Aug", status: "Draft" },
+  { id: "10", no: "INV-10030", customer: "Marudhar Packaging",    gst: "27AAMCM6650R1ZU", amount: 104000, date: "12 Jun", due: "12 Jul", status: "Overdue" },
+  { id: "11", no: "INV-10031", customer: "Nandi Agro Exports",    gst: "29AANCN9930S1ZV", amount: 762000, date: "27 Jul", due: "26 Aug", status: "Paid" },
+  { id: "12", no: "INV-10032", customer: "Zenith Pharma Labs",    gst: "29AAZCZ4470T1ZW", amount: 289000, date: "29 Jul", due: "28 Aug", status: "Draft" },
 ];
 
 const SC: Record<Invoice["status"], string> = { Draft: T.muted, Sent: T.blue, Paid: T.green, Overdue: T.red };
