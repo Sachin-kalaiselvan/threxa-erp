@@ -2,7 +2,10 @@ import { useState } from "react";
 import { Edit2, Trash2 } from "lucide-react";
 import {
   T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2,
+  FormModal, newId, parseCSV,
 } from "../ui/system";
+import type { FieldSpec } from "../ui/system";
+import { useLocation } from "react-router-dom";
 
 interface Customer {
   id: string; name: string; since: string; email: string; phone: string;
@@ -24,11 +27,39 @@ const SEED: Customer[] = [
   { id: "12", name: "Zenith Pharma Labs",     since: "2022", email: "stores@zenithpharma.in",  phone: "+91 98450 11245", gst: "29AAZCZ4470T1ZW", orders: 37, spent: 1395000, lastOrder: "18 Jul", active: false },
 ];
 
+const FIELDS: readonly FieldSpec[] = [
+  { key: "name", label: "Company name", placeholder: "e.g. Rajesh Enterprises", required: true },
+  { key: "since", label: "Customer since", placeholder: "2026", half: true },
+  { key: "gst", label: "GSTIN", placeholder: "29AABCR9603R1Z5", half: true },
+  { key: "email", label: "Email", placeholder: "name@company.in", required: true, half: true },
+  { key: "phone", label: "Phone", placeholder: "+91 98450 00000", half: true },
+  { key: "orders", label: "Total orders", type: "number", half: true },
+  { key: "spent", label: "Lifetime value (₹)", type: "number", half: true },
+  { key: "lastOrder", label: "Last order", placeholder: "29 Jul", half: true },
+  { key: "active", label: "Status", type: "select", options: ["Active", "Inactive"], half: true },
+] as const;
+
+const FILTER_OPTS = ["Active", "Inactive"] as const;
+
 export default function Customers() {
   const [rows, setRows] = useState<Customer[]>(SEED);
   const [q, setQ] = useState("");
+  const loc = useLocation();
+  const [status, setStatus] = useState("All");
+  const [modal, setModal] = useState<{ mode: "new" | "edit"; row?: Customer } | null>(
+    (loc.state as { create?: boolean } | null)?.create ? { mode: "new" } : null
+  );
 
-  const filtered = rows.filter(r =>
+  const save = (v: Record<string, any>) => {
+    const patch = { ...v, active: v.active === "Active" };
+    setRows(p => modal?.mode === "edit" && modal.row
+      ? p.map(r => (r.id === modal.row!.id ? { ...r, ...patch } : r))
+      : [{ id: newId(), ...patch } as Customer, ...p]);
+    setModal(null);
+  };
+
+  const rowsF = status === "All" ? rows : rows.filter(r => r.active === (status === "Active"));
+  const filtered = rowsF.filter(r =>
     r.name.toLowerCase().includes(q.toLowerCase()) ||
     r.email.toLowerCase().includes(q.toLowerCase())
   );
@@ -43,6 +74,30 @@ export default function Customers() {
     const a = document.createElement("a");
     a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
     a.download = "customers.csv"; a.click();
+  };
+
+  const importCSV = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const parsed = parseCSV(String(reader.result));
+      if (!parsed.length) { alert("No rows found in that CSV."); return; }
+      setRows(p => [
+        ...parsed.map(x => ({
+          id: newId(),
+          name: x["Name"] ?? "",
+          since: String(new Date().getFullYear()),
+          email: x["Email"] ?? "",
+          phone: x["Phone"] ?? "",
+          gst: x["GST"] ?? "",
+          orders: Number(x["Orders"]) || 0,
+          spent: Number(x["Total Spent"]) || 0,
+          lastOrder: "\u2014",
+          active: (x["Status"] ?? "Active") !== "Inactive",
+        })),
+        ...p,
+      ]);
+    };
+    reader.readAsText(file);
   };
 
   return (
@@ -61,8 +116,10 @@ export default function Customers() {
         search={q} onSearch={setQ}
         placeholder="Search customers…"
         primaryLabel="New Customer"
-        showImport
+        onPrimary={() => setModal({ mode: "new" })}
+        filterLabel="Status" filterValue={status} onFilter={setStatus} filterOptions={FILTER_OPTS}
         onExport={exportCSV}
+        showImport onImport={importCSV}
       />
 
       <DataTable
@@ -84,7 +141,7 @@ export default function Customers() {
           status: <Badge label={r.active ? "Active" : "Inactive"} color={r.active ? T.green : T.muted} />,
           act: (
             <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-              <button style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5, borderRadius: 6 }}
+              <button onClick={() => setModal({ mode: "edit", row: r })} title="Edit" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5, borderRadius: 6 }}
                 onMouseEnter={e => (e.currentTarget.style.color = T.blue)}
                 onMouseLeave={e => (e.currentTarget.style.color = T.muted)}>
                 <Edit2 size={14} />
@@ -99,6 +156,17 @@ export default function Customers() {
           ),
         }))}
       />
+      {modal && (
+        <FormModal
+          title={modal.mode === "edit" ? "Edit Customer" : "New Customer"}
+          subtitle={modal.mode === "edit" ? "Update this customer" : "Add a new customer"}
+          fields={FIELDS}
+          initial={modal.row ? { ...modal.row, active: modal.row.active ? "Active" : "Inactive" } : undefined}
+          submitLabel={modal.mode === "edit" ? "Save changes" : "Create"}
+          onClose={() => setModal(null)}
+          onSave={save}
+        />
+      )}
     </PageShell>
   );
 }
