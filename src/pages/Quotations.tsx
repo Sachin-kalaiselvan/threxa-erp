@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { FileText, Trash2 } from "lucide-react";
-import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../ui/system";
+import { Edit2, FileText, Trash2 } from "lucide-react";
+import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2, FormModal, newId } from "../ui/system";
+import type { FieldSpec } from "../ui/system";
+import { useLocation } from "react-router-dom";
+import { generateInvoicePDF } from "../utils/pdf";
 
 interface Quote { id: string; no: string; customer: string; contact: string; amount: number; items: string; date: string; validity: string; status: "Draft" | "Sent" | "Accepted" | "Rejected"; }
 
@@ -19,11 +22,55 @@ const SEED: Quote[] = [
 
 const SC: Record<Quote["status"], string> = { Draft: T.muted, Sent: T.blue, Accepted: T.green, Rejected: T.red };
 
+const FIELDS: readonly FieldSpec[] = [
+  { key: "no", label: "Quote no.", placeholder: "QT-128", required: true, half: true },
+  { key: "status", label: "Status", type: "select", options: ["Draft", "Sent", "Accepted", "Rejected"], half: true },
+  { key: "customer", label: "Customer", required: true },
+  { key: "contact", label: "Contact person", half: true },
+  { key: "items", label: "Line items", placeholder: "5 Ply Box × 500", half: true },
+  { key: "amount", label: "Quoted value (₹)", type: "number", half: true },
+  { key: "date", label: "Sent on", placeholder: "31 Jul", half: true },
+  { key: "validity", label: "Valid till", placeholder: "30 Aug", half: true },
+] as const;
+
+const FILTER_OPTS = ["Draft", "Sent", "Accepted", "Rejected"] as const;
+
 export default function Quotations() {
   const [rows, setRows] = useState(SEED);
   const [q, setQ] = useState("");
-  const f = rows.filter(r => r.no.toLowerCase().includes(q.toLowerCase()) || r.customer.toLowerCase().includes(q.toLowerCase()));
+  const loc = useLocation();
+  const [status, setStatus] = useState("All");
+  const [modal, setModal] = useState<{ mode: "new" | "edit"; row?: Quote } | null>(
+    (loc.state as { create?: boolean } | null)?.create ? { mode: "new" } : null
+  );
+
+  const save = (v: Record<string, any>) => {
+    const patch = v;
+    setRows(p => modal?.mode === "edit" && modal.row
+      ? p.map(r => (r.id === modal.row!.id ? { ...r, ...patch } : r))
+      : [{ id: newId(), ...patch } as Quote, ...p]);
+    setModal(null);
+  };
+  const rowsF = status === "All" ? rows : rows.filter(r => r.status === status);
+  const f = rowsF.filter(r => r.no.toLowerCase().includes(q.toLowerCase()) || r.customer.toLowerCase().includes(q.toLowerCase()));
   const pipeline = rows.filter(r => r.status === "Sent" || r.status === "Draft").reduce((s, r) => s + r.amount, 0);
+
+  const exportCSV = () => {
+    const csv = [["Quote", "Customer", "Items", "Amount", "Sent", "Valid till", "Status"], ...f.map(r => [r.no, r.customer, r.items, r.amount, r.date, r.validity, r.status])].map(r => r.join(",")).join("\n");
+    const a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv); a.download = "quotations.csv"; a.click();
+  };
+
+  const pdf = (r: Quote) => {
+    const data = generateInvoicePDF({
+      invoice_no: r.no, invoice_date: r.date, due_date: r.validity,
+      company_name: "Smart Packaging Solutions", company_gstin: "29AABCS1234A1Z5",
+      customer_name: r.customer, customer_gstin: "\u2014", customer_address: "\u2014", customer_state: "Karnataka",
+      items: [{ description: r.items, hsn: "4819", qty: 1, rate: r.amount, amount: r.amount }],
+      subtotal: r.amount, gst_rate: 18, cgst: r.amount * 0.09, sgst: r.amount * 0.09, total: r.amount * 1.18,
+      doc_type: "proforma",
+    });
+    const a = document.createElement("a"); a.href = data; a.download = `${r.no}.pdf`; a.click();
+  };
 
   return (
     <PageShell title="Quotations" subtitle="Quotes and conversion pipeline" meta={[`${rows.length} quotes`, `₹${(pipeline / 100000).toFixed(1)}L open pipeline`]}>
@@ -32,7 +79,14 @@ export default function Quotations() {
         { label: "Accepted", value: String(rows.filter(r => r.status === "Accepted").length), sub: `${Math.round(rows.filter(r => r.status === "Accepted").length / rows.length * 100)}% conversion`, spark: [0, 0, 1, 1, 1, 1], color: T.green },
         { label: "Open Pipeline", value: `₹${(pipeline / 100000).toFixed(1)}L`, sub: "awaiting response", spark: [1.5, 1.8, 2.0, 2.1, 2.2, 2.17], color: T.amber },
       ]} />
-      <ActionBar search={q} onSearch={setQ} placeholder="Search quotations…" primaryLabel="New Quotation" />
+      <ActionBar
+        search={q} onSearch={setQ}
+        placeholder="Search quotations…"
+        primaryLabel="New Quotation"
+        onPrimary={() => setModal({ mode: "new" })}
+        filterLabel="Status" filterValue={status} onFilter={setStatus} filterOptions={FILTER_OPTS}
+        onExport={exportCSV}
+      />
       <DataTable
         cols={[
           { key: "no", label: "Quote" }, { key: "customer", label: "Customer" },
@@ -49,12 +103,24 @@ export default function Quotations() {
           status: <Badge label={r.status} color={SC[r.status]} />,
           act: (
             <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-              <button title="Generate PDF" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><FileText size={14} /></button>
+              <button onClick={() => setModal({ mode: "edit", row: r })} title="Edit" style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Edit2 size={14} /></button>
+              <button title="Download proforma" onClick={() => pdf(r)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><FileText size={14} /></button>
               <button onClick={() => setRows(p => p.filter(x => x.id !== r.id))} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 5 }}><Trash2 size={14} /></button>
             </div>
           ),
         }))}
       />
+      {modal && (
+        <FormModal
+          title={modal.mode === "edit" ? "Edit Quotation" : "New Quotation"}
+          subtitle={modal.mode === "edit" ? "Update this quotation" : "Add a new quotation"}
+          fields={FIELDS}
+          initial={modal.row}
+          submitLabel={modal.mode === "edit" ? "Save changes" : "Create"}
+          onClose={() => setModal(null)}
+          onSave={save}
+        />
+      )}
     </PageShell>
   );
 }
