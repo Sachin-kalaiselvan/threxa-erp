@@ -5,11 +5,16 @@ import { T, PageShell, KPIStrip, ActionBar, DataTable, Badge, Cell2 } from "../u
 interface Item { id: string; name: string; gsm: number; bf: number; ply: string; kg: number; min: number; reams: number; location: string; updated: string; }
 
 const SEED: Item[] = [
-  { id: "1", name: "Test Liner",         gsm: 140, bf: 32, ply: "3 Ply", kg: 1240, min: 2000, reams: 25, location: "Godown A · Rack 01", updated: "16 Jul" },
-  { id: "2", name: "Corrugating Medium", gsm: 120, bf: 28, ply: "3 Ply", kg: 980,  min: 1500, reams: 15, location: "Godown A · Rack 02", updated: "16 Jul" },
-  { id: "3", name: "Kraft Paper",        gsm: 200, bf: 40, ply: "5 Ply", kg: 1100, min: 1500, reams: 22, location: "Godown B · Rack 01", updated: "15 Jul" },
-  { id: "4", name: "Duplex Board",       gsm: 250, bf: 45, ply: "5 Ply", kg: 2300, min: 2500, reams: 40, location: "Godown B · Rack 03", updated: "14 Jul" },
-  { id: "5", name: "White Top Liner",    gsm: 170, bf: 35, ply: "5 Ply", kg: 1450, min: 1500, reams: 28, location: "Godown C · Rack 01", updated: "16 Jul" },
+  { id: "1",  name: "Test Liner",          gsm: 140, bf: 32, ply: "3 Ply", kg: 1240, min: 2000, reams: 25, location: "Godown A · Rack 01", updated: "30 Jul" },
+  { id: "2",  name: "Corrugating Medium",  gsm: 120, bf: 28, ply: "3 Ply", kg: 980,  min: 1500, reams: 15, location: "Godown A · Rack 02", updated: "30 Jul" },
+  { id: "3",  name: "Kraft Paper",         gsm: 200, bf: 40, ply: "5 Ply", kg: 1100, min: 1500, reams: 22, location: "Godown B · Rack 01", updated: "29 Jul" },
+  { id: "4",  name: "Duplex Board",        gsm: 250, bf: 45, ply: "5 Ply", kg: 2300, min: 2500, reams: 40, location: "Godown B · Rack 03", updated: "28 Jul" },
+  { id: "5",  name: "White Top Liner",     gsm: 170, bf: 35, ply: "5 Ply", kg: 1450, min: 1500, reams: 28, location: "Godown C · Rack 01", updated: "30 Jul" },
+  { id: "6",  name: "Semi Kraft Liner",    gsm: 180, bf: 35, ply: "5 Ply", kg: 3200, min: 2000, reams: 55, location: "Godown A · Rack 04", updated: "29 Jul" },
+  { id: "7",  name: "Golden Yellow Kraft", gsm: 150, bf: 32, ply: "3 Ply", kg: 2750, min: 1800, reams: 47, location: "Godown B · Rack 02", updated: "27 Jul" },
+  { id: "8",  name: "Virgin Kraft Liner",  gsm: 220, bf: 45, ply: "7 Ply", kg: 640,  min: 1200, reams: 11, location: "Godown C · Rack 03", updated: "26 Jul" },
+  { id: "9",  name: "Gum Powder (Starch)", gsm: 0,   bf: 0,  ply: "—",     kg: 420,  min: 300,  reams: 0,  location: "Godown A · Bay 06",  updated: "30 Jul" },
+  { id: "10", name: "Flexo Ink — Cyan",    gsm: 0,   bf: 0,  ply: "—",     kg: 85,   min: 120,  reams: 0,  location: "Godown C · Bay 02",  updated: "28 Jul" },
 ];
 
 export default function Inventory() {
