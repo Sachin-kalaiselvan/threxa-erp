@@ -1,53 +1,173 @@
-# Threxa ERP — Carton Box Manufacturer
+# Threxa SPS ERP
 
-A custom ERP system for order management, production tracking, dispatch, and financial reporting. Built with Vite + React + TypeScript + Supabase, deployed on Vercel.
+Vertical ERP for corrugated box and packaging manufacturers. Desktop web app for
+the office, phone app for the shop floor, one codebase.
 
-## Modules
+Built and maintained by [Threxa](https://threxa.theingredientlist.co), a unit of
+The Ingredient List, Bengaluru.
 
-- **Documents**: Quotation calculator (GSM/BF/ply), invoices, challans
-- **Orders & Production**: Order pipeline, inventory, production tracking
-- **Payroll**: Employees, attendance, payroll register
-- **Dispatch**: Shipment tracking
-- **Dashboard**: Orders, revenue, receivables at a glance
+---
 
-## Quick Start (Browser Only)
+## What it does
 
-### 1. Set up GitHub
-- Create a private repo: `threxa-erp`
-- On GitHub, click "uploading an existing file" and drag the folder contents into the upload area
-- Commit to `main`
+**Desktop (office)** — 13 modules covering the full order-to-cash cycle:
+Customers, Orders, Quotations, Invoices, Dispatch, Production, Products,
+Inventory, Employees, Attendance, Payroll, Cash Book, Dashboard.
 
-### 2. Set up Supabase
-- Create a new project at supabase.com (region: Mumbai)
-- SQL Editor → paste `supabase/migrations/001_initial_schema.sql` → Run
-- Authentication → Users → Add user (email + password)
-- Turn off public signups: Authentication → Providers → Email → disable "Allow new users to sign up"
-- Copy your Project URL and anon public key from Project Settings → API
+Domain-specific pieces built for this industry rather than adapted from a
+generic ERP:
 
-### 3. Deploy to Vercel
-- Go to vercel.com → Add New Project → select your GitHub repo
-- Framework: Vite (auto-detected)
-- Add Environment Variables:
-  - `VITE_SUPABASE_URL` = your Project URL
-  - `VITE_SUPABASE_ANON_KEY` = your anon key
-- Deploy (future pushes to `main` redeploy automatically)
+- Quotation calculator using GSM × BF bursting-strength logic for 3/5/7-ply board
+- FEFCO box style codes on the Products master
+- Reel stock tracking with supplier credit terms
+- Proforma and GST tax invoices with CGST/SGST/IGST split driven by customer state code
+- Delivery challans with PDF generation
 
-### 4. Local Development
+**Mobile (shop floor)** — a PWA at `/m`, installable to the home screen, with
+three role-scoped views:
 
-**Quick edits**: Open the repo on github.com, press `.` to open github.dev, edit, and commit.
+| Role | Screen | Can do |
+|---|---|---|
+| Owner | `/m/owner` | Read-only KPIs, live machine status, alerts |
+| Supervisor | `/m/supervisor` | Update job card status and produced quantity |
+| Driver | `/m/driver` | Trip list, status updates, POD photo capture |
 
-**Full dev with live reload**: Open `https://stackblitz.com/github/<your-username>/threxa-erp` — StackBlitz runs the dev server in your browser. Add a `.env` file there with your Supabase credentials (never commit it). When done, commit back to GitHub.
+Full English / ಕನ್ನಡ toggle on every mobile screen.
 
-## Key Patterns
+---
 
-- **CRUD example**: `src/pages/Customers.tsx`
-- **Opening animation**: `src/components/ThrexaIntro.tsx` (plays once per session)
-- **Document numbering**: Call the SQL function `select next_doc_number('order')` — keys: `order`, `job`, `challan`, `invoice`
-- **Roles**: Set `role` in the profiles table — supports owner, admin, production, dispatch, accounts, staff
+## Stack
 
-## File Structure
+| Layer | Choice |
+|---|---|
+| Framework | React 18 + TypeScript |
+| Build | Vite 5 |
+| Routing | React Router 6 |
+| Data | Supabase (Postgres + Auth + Storage) |
+| Server state | TanStack Query 5 |
+| Icons | lucide-react |
+| PDF | jsPDF + jspdf-autotable |
+| Hosting | Vercel |
 
-- `supabase/migrations/` — database schema (run new migrations in Supabase SQL Editor)
-- `src/pages/` — list and detail pages for each module
-- `src/components/` — reusable UI and modal components
-- `.env.example` — copy to `.env` locally with your Supabase keys
+---
+
+## Local setup
+
+```bash
+npm install
+cp .env.example .env.local   # fill in the two Supabase values
+npm run dev
+```
+
+`npm run build` runs `tsc -b && vite build` — the same command Vercel runs. If it
+passes locally it will deploy.
+
+### Environment variables
+
+Set these in Vercel → Settings → Environment Variables, and in `.env.local` for
+local work:
+
+```
+VITE_SUPABASE_URL=https://<project>.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon key>
+```
+
+Without them the app renders a configuration notice instead of crashing.
+
+---
+
+## Project structure
+
+```
+threxa-sps-erp/
+├── index.html              PWA meta tags, manifest link, SW registration
+├── vercel.json             SPA rewrite — all paths serve index.html
+├── public/
+│   ├── manifest.json       PWA manifest
+│   ├── sw.js               Service worker (app shell cache)
+│   └── icon-*.png          Home screen icons incl. maskable
+└── src/
+    ├── App.tsx             Auth gate, role detection, all routing
+    ├── main.tsx            Providers: Router, Query, Lang
+    ├── i18n/               English / Kannada dictionary + context
+    ├── mobile/             Phone views
+    │   ├── MobileShell.tsx Shared chrome, tokens, buttons, cards
+    │   ├── Owner.tsx
+    │   ├── Supervisor.tsx
+    │   └── Driver.tsx
+    ├── pages/              13 desktop module pages
+    ├── components/         Layout, sidebar, intro animation, charts
+    ├── ui/system.tsx       Desktop design system — do not hand-roll layout
+    ├── lib/                Supabase client, query client
+    ├── utils/pdf.ts        Challan and invoice PDF generation
+    └── types/
+```
+
+**Rule:** desktop pages compose primitives from `src/ui/system.tsx`. Mobile views
+compose from `src/mobile/MobileShell.tsx`. Neither should hand-roll layout — that
+is what keeps 13 modules looking like one product.
+
+---
+
+## Roles
+
+Roles come from Supabase user metadata. Supabase Dashboard → Authentication →
+Users → select a user → **User Metadata**:
+
+```json
+{ "role": "owner" }
+```
+
+| Value | Access |
+|---|---|
+| `admin` | Full desktop ERP. Default when metadata is absent. |
+| `owner` | Desktop ERP; auto-redirects to `/m/owner` on screens under 820px. |
+| `supervisor` | `/m/supervisor` only. Cannot reach the desktop ERP. |
+| `driver` | `/m/driver` only. Cannot reach the desktop ERP. |
+
+Route-level restriction is client-side and is a UX boundary, not a security one.
+Enforce actual access with Supabase Row Level Security policies keyed on the same
+metadata claim before any client goes live.
+
+---
+
+## Installing on a phone
+
+1. Open the deployed URL on the device
+2. Android: Chrome menu → Add to Home screen. iOS: Share → Add to Home Screen
+3. Launches full-screen with no browser chrome
+
+The service worker caches the app shell, so the interface loads on a weak factory
+connection. Data still requires network — Supabase calls are never cached.
+
+---
+
+## Current state
+
+The mobile views and desktop modules run on seed data defined in each file.
+Supabase write points are marked with `/* TODO: supabase... */` comments; the data
+shapes are final, so wiring them up does not change any layout.
+
+Not yet built:
+
+- Supabase Storage bucket for POD photos (currently held in memory as data URLs)
+- Geo-fenced worker attendance
+- Two-way Tally sync
+- E-way bill generation from dispatch records
+- Multi-tenant row isolation
+
+---
+
+## Deployment
+
+Vercel builds on every push to `main`. `vercel.json` rewrites all paths to
+`index.html` so deep links like `/m/owner/alerts` survive a page refresh.
+
+When changing anything in `public/`, bump the `CACHE` constant in `public/sw.js`
+or returning devices will serve the old shell from cache.
+
+---
+
+## Licence
+
+See `LICENSE`.
