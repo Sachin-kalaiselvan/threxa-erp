@@ -6,26 +6,29 @@ import {
   DollarSign, LogOut, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { useLang } from "../i18n";
+import type { TKey } from "../i18n";
 import threxaIcon from "../assets/threxa-icon.png";
 
-const NAV = [
-  { label: "Dashboard",  icon: LayoutDashboard, path: "/" },
-  { label: "Customers",  icon: Users,            path: "/customers" },
-  { label: "Orders",     icon: ShoppingCart,     path: "/orders" },
-  { label: "Production", icon: Zap,              path: "/production" },
-  { label: "Quotations", icon: FileText,         path: "/quotations" },
-  { label: "Invoices",   icon: FileText,         path: "/invoices" },
-  { label: "Dispatch",   icon: Truck,            path: "/dispatch" },
-  { label: "Products",   icon: Package,          path: "/products" },
-  { label: "Inventory",  icon: Inbox,            path: "/inventory" },
-  { label: "Employees",  icon: Users2,           path: "/employees" },
-  { label: "Attendance", icon: Clock,            path: "/attendance" },
-  { label: "Payroll",    icon: Wallet,           path: "/payroll" },
-  { label: "Cash Book",  icon: DollarSign,       path: "/cashbook" },
+const NAV: { label: TKey; icon: any; path: string }[] = [
+  { label: "navDashboard",  icon: LayoutDashboard, path: "/" },
+  { label: "navCustomers",  icon: Users,            path: "/customers" },
+  { label: "navOrders",     icon: ShoppingCart,     path: "/orders" },
+  { label: "navProduction", icon: Zap,              path: "/production" },
+  { label: "navQuotations", icon: FileText,         path: "/quotations" },
+  { label: "navInvoices",   icon: FileText,         path: "/invoices" },
+  { label: "navDispatch",   icon: Truck,            path: "/dispatch" },
+  { label: "navProducts",   icon: Package,          path: "/products" },
+  { label: "navInventory",  icon: Inbox,            path: "/inventory" },
+  { label: "navEmployees",  icon: Users2,           path: "/employees" },
+  { label: "navAttendance", icon: Clock,            path: "/attendance" },
+  { label: "navPayroll",    icon: Wallet,           path: "/payroll" },
+  { label: "navCashBook",   icon: DollarSign,       path: "/cashbook" },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [col, setCol] = useState(false);
+  const { t } = useLang();
   const nav = useNavigate();
   const loc = useLocation();
   const on  = (p: string) => loc.pathname === p;
@@ -51,12 +54,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* nav */}
         <nav style={{ flex: 1, padding: "10px 7px", overflowY: "auto", overflowX: "hidden" }}>
           {NAV.map(({ label, icon: Icon, path }) => (
-            <button key={path} onClick={() => nav(path)} title={col ? label : undefined} style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, padding: col ? "9px 0" : "8px 11px", justifyContent: col ? "center" : "flex-start", borderRadius: 7, marginBottom: 1, border: "none", cursor: "pointer", background: on(path) ? "rgba(100,80,255,0.16)" : "transparent", color: on(path) ? "#9D87FF" : "#4E5070", fontSize: 13, fontWeight: on(path) ? 600 : 400, transition: "all .12s" }}
+            <button key={path} onClick={() => nav(path)} title={col ? t(label) : undefined} style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, padding: col ? "9px 0" : "8px 11px", justifyContent: col ? "center" : "flex-start", borderRadius: 7, marginBottom: 1, border: "none", cursor: "pointer", background: on(path) ? "rgba(100,80,255,0.16)" : "transparent", color: on(path) ? "#9D87FF" : "#4E5070", fontSize: 13, fontWeight: on(path) ? 600 : 400, transition: "all .12s" }}
               onMouseEnter={e => { if (!on(path)) { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,255,255,0.035)"; el.style.color = "#8E90B8"; }}}
               onMouseLeave={e => { if (!on(path)) { const el = e.currentTarget as HTMLElement; el.style.background = "transparent"; el.style.color = "#4E5070"; }}}
             >
               <Icon size={15} style={{ flexShrink: 0 }} />
-              {!col && <span style={{ whiteSpace: "nowrap" }}>{label}</span>}
+              {!col && <span style={{ whiteSpace: "nowrap" }}>{t(label)}</span>}
             </button>
           ))}
         </nav>
@@ -68,9 +71,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {!col && <>
               <div style={{ flex: 1 }}>
                 <div style={{ color: "#B8BAD8", fontSize: 12, fontWeight: 500 }}>Sachin K.</div>
-                <div style={{ color: "#3D3F5E", fontSize: 11 }}>Admin</div>
+                <div style={{ color: "#3D3F5E", fontSize: 11 }}>{t("admin")}</div>
               </div>
-              <button onClick={out} style={{ background: "none", border: "none", cursor: "pointer", color: "#3D3F5E", padding: 4, borderRadius: 6, display: "flex" }} title="Sign out">
+              <button onClick={out} style={{ background: "none", border: "none", cursor: "pointer", color: "#3D3F5E", padding: 4, borderRadius: 6, display: "flex" }} title={t("signOut")}>
                 <LogOut size={14} />
               </button>
             </>}
