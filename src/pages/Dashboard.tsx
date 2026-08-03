@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import LanguagePicker from "../components/LanguagePicker";
+import { useLang } from "../i18n";
 
 /* ═══ Threxa ERP · Operations Dashboard ═══
    Answers one question: "What needs my attention right now?"
@@ -18,6 +19,7 @@ import LanguagePicker from "../components/LanguagePicker";
 export default function Dashboard() {
   const [q, setQ] = useState("");
   const nav = useNavigate();
+  const { t, lang } = useLang();
 
   /* ── header interaction state ── */
   const [bellOpen, setBellOpen] = useState(false);
@@ -32,9 +34,9 @@ export default function Dashboard() {
     await supabase.auth.signOut();
   };
   const h = new Date().getHours();
-  const grt = h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : "Good Evening";
-  const shift = h < 14 ? "Morning Shift" : h < 22 ? "Evening Shift" : "Night Shift";
-  const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "2-digit", month: "short", year: "numeric" });
+  const grt = h < 12 ? t("goodMorning") : h < 17 ? t("goodAfternoon") : t("goodEvening");
+  const shift = h < 14 ? t("morningShift") : h < 22 ? t("eveningShift") : t("nightShift");
+  const today = new Date().toLocaleDateString(`${lang}-IN`, { weekday: "long", day: "2-digit", month: "short", year: "numeric" });
 
   /* ── data (wire to Supabase later; shapes are final) ── */
   const timeline = [
@@ -150,11 +152,11 @@ export default function Dashboard() {
 
               <Menu open={bellOpen} onClose={() => setBellOpen(false)} width={330}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px", borderBottom: `1px solid ${T.lineSoft}` }}>
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: T.text }}>Notifications</span>
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: T.text }}>{t("notifications")}</span>
                   {unread > 0 && (
                     <button onClick={() => setReadIds(attention.map((_, i) => i))}
                       style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", color: T.accent, fontSize: 11.5, padding: 0 }}>
-                      <CheckCheck size={13} /> Mark all read
+                      <CheckCheck size={13} /> {t("markAllRead")}
                     </button>
                   )}
                 </div>
@@ -206,11 +208,11 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div style={{ padding: "5px 0" }}>
-                  <MenuItem icon={User} label="Profile" onClick={() => { setUserOpen(false); setProfileOpen(true); }} />
-                  <MenuItem icon={Settings} label="Settings" onClick={() => { setUserOpen(false); setSettingsOpen(true); }} />
+                  <MenuItem icon={User} label={t("profile")} onClick={() => { setUserOpen(false); setProfileOpen(true); }} />
+                  <MenuItem icon={Settings} label={t("settings")} onClick={() => { setUserOpen(false); setSettingsOpen(true); }} />
                 </div>
                 <div style={{ borderTop: `1px solid ${T.lineSoft}`, padding: "5px 0" }}>
-                  <MenuItem icon={LogOut} label="Sign out" danger onClick={signOut} />
+                  <MenuItem icon={LogOut} label={t("signOut")} danger onClick={signOut} />
                 </div>
               </Menu>
             </div>
@@ -242,7 +244,7 @@ export default function Dashboard() {
         {/* ═ Row: Production Timeline | Needs Attention ═ */}
         <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 12, marginBottom: 12 }}>
           <Card>
-            <CardTitle>Today's Production Timeline</CardTitle>
+            <CardTitle>{t("prodTimeline")}</CardTitle>
             <div style={{ padding: "2px 0 8px" }}>
               {timeline.map(([time, event, st], i) => (
                 <div key={i} style={{ display: "flex", gap: 14, padding: "8px 16px", alignItems: "flex-start" }}>
@@ -261,7 +263,7 @@ export default function Dashboard() {
           </Card>
 
           <Card>
-            <CardTitle>Needs Attention</CardTitle>
+            <CardTitle>{t("needsAttention")}</CardTitle>
             <div style={{ paddingBottom: 6 }}>
               {attention.map(([color, title, sub2, route], i) => (
                 <div
@@ -284,7 +286,7 @@ export default function Dashboard() {
         {/* ═ Row: Work Orders | Machine Status ═ */}
         <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 12, marginBottom: 12 }}>
           <Card>
-            <CardTitle>Today's Work Orders</CardTitle>
+            <CardTitle>{t("todayWorkOrders")}</CardTitle>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>{["WO", "Customer", "Stage", "Machine", "Progress", "Operator"].map(hh => (
@@ -312,7 +314,7 @@ export default function Dashboard() {
           </Card>
 
           <Card>
-            <CardTitle>Machine Status</CardTitle>
+            <CardTitle>{t("machineStatus")}</CardTitle>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>{["Machine", "Status", "Operator", "Eff.", "Maint."].map(hh => (
@@ -337,7 +339,7 @@ export default function Dashboard() {
         {/* ═ Row: Low Stock | Dispatch Schedule ═ */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 12, marginBottom: 12 }}>
           <Card>
-            <CardTitle>Low Stock Materials</CardTitle>
+            <CardTitle>{t("lowStockMaterials")}</CardTitle>
             <div style={{ paddingBottom: 6 }}>
               {lowStock.map(([item, cur, min, c], i) => (
                 <div key={i} style={{ ...row, borderBottom: i === lowStock.length - 1 ? "none" : `1px solid ${T.lineSoft}` }}>
@@ -353,7 +355,7 @@ export default function Dashboard() {
           </Card>
 
           <Card>
-            <CardTitle>Dispatch Schedule</CardTitle>
+            <CardTitle>{t("dispatchSchedule")}</CardTitle>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>{["Time", "Challan", "Customer", "Vehicle", "Status"].map(hh => (
@@ -378,7 +380,7 @@ export default function Dashboard() {
         {/* ═ Row: Cash Book | Recent Activity ═ */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 12 }}>
           <Card>
-            <CardTitle>Cash Position</CardTitle>
+            <CardTitle>{t("cashPosition")}</CardTitle>
             <div style={{ padding: "0 16px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               {[["Bank Balance", cash.bank, T.text], ["Cash in Hand", cash.hand, T.text],
                 ["Receipts Today", cash.inToday, T.green], ["Payments Today", cash.outToday, T.red]].map(([l, v, c]) => (
@@ -394,7 +396,7 @@ export default function Dashboard() {
           </Card>
 
           <Card>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle>{t("recentActivity")}</CardTitle>
             <div style={{ paddingBottom: 6 }}>
               {activity.map(([title, sub, c], i) => (
                 <div key={i} style={{ ...row, borderBottom: i === activity.length - 1 ? "none" : `1px solid ${T.lineSoft}` }}>
@@ -436,16 +438,16 @@ export default function Dashboard() {
       )}
 
       {settingsOpen && (
-        <Modal title="Settings" subtitle="Language and notification preferences" width={520}
+        <Modal title={t("settings")} subtitle={t("settingsSubtitle")} width={520}
           onClose={() => setSettingsOpen(false)}
-          footer={<Btn variant="primary" onClick={() => setSettingsOpen(false)}>Save changes</Btn>}>
+          footer={<Btn variant="primary" onClick={() => setSettingsOpen(false)}>{t("saveChanges")}</Btn>}>
           <LanguagePicker />
           <Toggle on={prefs.alerts} onChange={v => setPrefs(p => ({ ...p, alerts: v }))}
-            label="Operational alerts" sub="Machine faults, delayed dispatches" />
+            label={t("operationalAlerts")} sub={t("operationalAlertsSub")} />
           <Toggle on={prefs.lowStock} onChange={v => setPrefs(p => ({ ...p, lowStock: v }))}
-            label="Low stock warnings" sub="Notify when reels fall below reorder level" />
+            label={t("lowStockWarnings")} sub={t("lowStockWarningsSub")} />
           <Toggle on={prefs.digest} onChange={v => setPrefs(p => ({ ...p, digest: v }))}
-            label="Daily email digest" sub="Production summary at 8:00 PM" />
+            label={t("dailyDigest")} sub={t("dailyDigestSub")} />
         </Modal>
       )}
 
