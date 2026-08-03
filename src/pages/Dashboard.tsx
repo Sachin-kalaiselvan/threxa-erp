@@ -9,6 +9,7 @@ import {
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import LanguagePicker from "../components/LanguagePicker";
 
 /* ═══ Threxa ERP · Operations Dashboard ═══
    Answers one question: "What needs my attention right now?"
@@ -435,9 +436,10 @@ export default function Dashboard() {
       )}
 
       {settingsOpen && (
-        <Modal title="Settings" subtitle="Notification preferences" width={520}
+        <Modal title="Settings" subtitle="Language and notification preferences" width={520}
           onClose={() => setSettingsOpen(false)}
           footer={<Btn variant="primary" onClick={() => setSettingsOpen(false)}>Save changes</Btn>}>
+          <LanguagePicker />
           <Toggle on={prefs.alerts} onChange={v => setPrefs(p => ({ ...p, alerts: v }))}
             label="Operational alerts" sub="Machine faults, delayed dispatches" />
           <Toggle on={prefs.lowStock} onChange={v => setPrefs(p => ({ ...p, lowStock: v }))}
