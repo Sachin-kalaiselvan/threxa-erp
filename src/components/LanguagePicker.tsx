@@ -1,20 +1,15 @@
 /* ═══════════════════════════════════════════════════════════
    LANGUAGE PICKER · desktop
-   Segmented control. Shares the same LangProvider state as the
-   mobile header, so switching in one place switches everywhere.
+   Dropdown, driven by LANGUAGES in src/i18n. Add a language
+   there and it appears here automatically.
    ═══════════════════════════════════════════════════════════ */
-import { Languages } from "lucide-react";
+import { Languages, ChevronDown } from "lucide-react";
 import { T } from "../ui/system";
-import { useLang } from "../i18n";
+import { useLang, LANGUAGES } from "../i18n";
 import type { Lang } from "../i18n";
 
-const OPTIONS: { value: Lang; label: string; sub: string }[] = [
-  { value: "en", label: "English", sub: "Default" },
-  { value: "kn", label: "ಕನ್ನಡ", sub: "Kannada" },
-];
-
 export default function LanguagePicker() {
-  const { lang, setLang } = useLang();
+  const { lang, setLang, t } = useLang();
 
   return (
     <div
@@ -30,48 +25,48 @@ export default function LanguagePicker() {
       <div style={{ display: "flex", gap: 11, alignItems: "flex-start", minWidth: 0 }}>
         <Languages size={16} color={T.muted} style={{ marginTop: 2, flexShrink: 0 }} />
         <div>
-          <div style={{ fontSize: 13, fontWeight: 500, color: T.text }}>Language</div>
-          <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>
-            Applies to the shop-floor app and operator screens
-          </div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: T.text }}>{t("language")}</div>
+          <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>{t("languageHelp")}</div>
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          background: T.card2,
-          border: `1px solid ${T.line}`,
-          borderRadius: 9,
-          padding: 3,
-          gap: 3,
-          flexShrink: 0,
-        }}
-      >
-        {OPTIONS.map((o) => {
-          const on = lang === o.value;
-          return (
-            <button
-              key={o.value}
-              onClick={() => setLang(o.value)}
-              title={o.sub}
-              style={{
-                padding: "7px 15px",
-                fontSize: 12.5,
-                fontWeight: on ? 600 : 500,
-                borderRadius: 7,
-                border: "none",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                background: on ? T.accent : "transparent",
-                color: on ? "#fff" : T.sub,
-                transition: "background .12s, color .12s",
-              }}
-            >
-              {o.label}
-            </button>
-          );
-        })}
+      <div style={{ position: "relative", flexShrink: 0 }}>
+        <select
+          value={lang}
+          onChange={(e) => setLang(e.target.value as Lang)}
+          style={{
+            appearance: "none",
+            WebkitAppearance: "none",
+            MozAppearance: "none",
+            background: T.card2,
+            border: `1px solid ${T.line}`,
+            borderRadius: 8,
+            color: T.text,
+            fontSize: 13,
+            fontWeight: 500,
+            padding: "9px 34px 9px 13px",
+            minWidth: 168,
+            cursor: "pointer",
+            outline: "none",
+          }}
+        >
+          {LANGUAGES.map((l) => (
+            <option key={l.value} value={l.value} style={{ background: T.card, color: T.text }}>
+              {l.value === "en" ? l.label : `${l.label} · ${l.english}`}
+            </option>
+          ))}
+        </select>
+        <ChevronDown
+          size={14}
+          color={T.muted}
+          style={{
+            position: "absolute",
+            right: 11,
+            top: "50%",
+            transform: "translateY(-50%)",
+            pointerEvents: "none",
+          }}
+        />
       </div>
     </div>
   );
