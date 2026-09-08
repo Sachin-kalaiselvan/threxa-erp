@@ -1,4 +1,4 @@
-# Threxa SPS ERP
+# Threxa ERP
 
 Vertical ERP for corrugated box and packaging manufacturers. Desktop web app for
 the office, phone app for the shop floor, one codebase.
@@ -79,7 +79,7 @@ Without them the app renders a configuration notice instead of crashing.
 ## Project structure
 
 ```
-threxa-sps-erp/
+threxa-erp/
 ├── index.html              PWA meta tags, manifest link, SW registration
 ├── vercel.json             SPA rewrite — all paths serve index.html
 ├── public/
