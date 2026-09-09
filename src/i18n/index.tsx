@@ -49,6 +49,12 @@ const EN = {
   navAttendance: "Attendance",
   navPayroll: "Payroll",
   navCashBook: "Cash Book",
+  navWastage: "Wastage",
+  navScheduling: "Scheduling",
+  navQuoteCalc: "Quote Calculator",
+  navQuality: "Quality",
+  navVendors: "Vendors",
+  navActivity: "Activity Log",
 
   /* ── desktop dashboard ── */
   goodMorning: "Good Morning",
