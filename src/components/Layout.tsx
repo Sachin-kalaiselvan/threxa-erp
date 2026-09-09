@@ -37,7 +37,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [col, setCol] = useState(false);
   const nav = useNavigate();
   const loc = useLocation();
-  const t = useLang();
+  const { t } = useLang();
 
   const on = (p: string) => loc.pathname === p;
 
@@ -51,7 +51,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <button onClick={() => setCol(!col)} style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 44, padding: "0 12px", background: "none", border: "none", cursor: "pointer", marginBottom: 20 }}>
           <img src={threxaIcon} alt="Threxa" style={{ height: col ? 32 : 24, width: "auto" }} />
         </button>
-        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, paddingX: 8, overflowY: "auto" }}>
+        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, paddingLeft: 8, paddingRight: 8, overflowY: "auto" }}>
           {NAV.map(({ label, icon: Icon, path }) => (
             <button key={path} onClick={() => nav(path)} title={col ? t(label) : undefined} style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, padding: col ? "9px 0" : "8px 11px", justifyContent: col ? "center" : "flex-start", borderRadius: 7, marginBottom: 1, border: "none", cursor: "pointer", background: on(path) ? "rgba(100,80,255,0.16)" : "transparent", color: on(path) ? "#9D87FF" : "#4E5070", fontSize: 13, fontWeight: on(path) ? 600 : 400, transition: "all .12s" }}
               onMouseEnter={e => { if (!on(path)) { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(255,255,255,0.035)"; el.style.color = "#8E90B8"; }}}
@@ -65,7 +65,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = "rgba(248,113,113,0.1)"; el.style.color = "#F87171"; }}
           onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "transparent"; el.style.color = "#4E5070"; }}>
           <LogOut size={18} style={{ flexShrink: 0 }} />
-          {!col && <span>{t("logout")}</span>}
+          {!col && <span>{t("signOut")}</span>}
         </button>
         <button onClick={() => setCol(!col)} title="Toggle sidebar" style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 38, marginTop: 8, background: "none", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 7, cursor: "pointer", color: "#8E90B8", transition: "all .12s" }}
           onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.borderColor = "rgba(123,104,255,0.3)"; el.style.color = "#9D87FF"; }}
