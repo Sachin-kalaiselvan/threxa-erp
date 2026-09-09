@@ -49,6 +49,12 @@ const EN = {
   navAttendance: "Attendance",
   navPayroll: "Payroll",
   navCashBook: "Cash Book",
+  navWastage: "Wastage",
+  navScheduling: "Scheduling",
+  navQuoteCalc: "Quote Calculator",
+  navQuality: "Quality",
+  navVendors: "Vendors",
+  navActivity: "Activity Log",
 
   /* ── desktop dashboard ── */
   goodMorning: "Good Morning",
@@ -157,6 +163,14 @@ const KN: Record<TKey, string> = {
   navAttendance: "ಹಾಜರಾತಿ",
   navPayroll: "ವೇತನ",
   navCashBook: "ನಗದು ಪುಸ್ತಕ",
+  navWastage: "ವ್ಯರ್ಥ",
+  navScheduling: "ವೇಳಾಪಟ್ಟಿ",
+  navQuoteCalc: "ದರ ಕ್ಯಾಲ್ಕುಲೇಟರ್",
+  navQuality: "ಗುಣಮಟ್ಟ",
+  navVendors: "ಪೂರೈಕೆದಾರರು",
+  navActivity: "ಚಟುವಟಿಕೆ ದಾಖಲೆ",
+
+  /* ── desktop dashboard ── */
 
   goodMorning: "ಶುಭೋದಯ",
   goodAfternoon: "ಶುಭ ಮಧ್ಯಾಹ್ನ",
@@ -257,6 +271,14 @@ const HI: Record<TKey, string> = {
   navAttendance: "हाज़िरी",
   navPayroll: "वेतन",
   navCashBook: "कैश बुक",
+  navWastage: "बर्बादी",
+  navScheduling: "शेड्यूलिंग",
+  navQuoteCalc: "कोट कैलकुलेटर",
+  navQuality: "गुणवत्ता",
+  navVendors: "विक्रेता",
+  navActivity: "गतिविधि लॉग",
+
+  /* ── desktop dashboard ── */
 
   goodMorning: "सुप्रभात",
   goodAfternoon: "नमस्कार",
@@ -357,6 +379,14 @@ const TA: Record<TKey, string> = {
   navAttendance: "வருகை",
   navPayroll: "ஊதியம்",
   navCashBook: "பணப் புத்தகம்",
+  navWastage: "வீணாதல்",
+  navScheduling: "திட்டமிடல்",
+  navQuoteCalc: "விலை கால்குலேட்டர்",
+  navQuality: "தரம்",
+  navVendors: "விற்பனையாளர்கள்",
+  navActivity: "செயல்பாட்டு பதிவு",
+
+  /* ── desktop dashboard ── */
 
   goodMorning: "காலை வணக்கம்",
   goodAfternoon: "மதிய வணக்கம்",
