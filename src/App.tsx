@@ -20,6 +20,12 @@ import Attendance from "./pages/Attendance";
 import Payroll from "./pages/Payroll";
 import CashBook from "./pages/CashBook";
 import Demo from "./pages/Demo";
+import Wastage from "./pages/Wastage";
+import Scheduling from "./pages/Scheduling";
+import QuoteCalculator from "./pages/QuoteCalculator";
+import Quality from "./pages/Quality";
+import Vendors from "./pages/Vendors";
+import ActivityLog from "./pages/ActivityLog";
 
 /* mobile */
 import { MobileShell } from "./mobile/MobileShell";
@@ -200,6 +206,12 @@ export default function App() {
                 <Route path="/attendance" element={<Attendance />} />
                 <Route path="/payroll" element={<Payroll />} />
                 <Route path="/cashbook" element={<CashBook />} />
+                <Route path="/wastage" element={<Wastage />} />
+                <Route path="/scheduling" element={<Scheduling />} />
+                <Route path="/quote-calculator" element={<QuoteCalculator />} />
+                <Route path="/quality" element={<Quality />} />
+                <Route path="/vendors" element={<Vendors />} />
+                <Route path="/activity" element={<ActivityLog />} />
                 <Route path="/demo" element={<Demo />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
