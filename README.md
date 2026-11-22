@@ -1,173 +1,115 @@
-# Threxa ERP
+# threxa-erp
 
-Vertical ERP for corrugated box and packaging manufacturers. Desktop web app for
-the office, phone app for the shop floor, one codebase.
+ERP built specifically for corrugated box + packaging manufacturers. desktop web app for the office, phone app for the shop floor, one codebase.
 
-Built and maintained by [Threxa](https://threxa.theingredientlist.co), a unit of
-The Ingredient List, Bengaluru.
+built + run by [threxa](https://threxa.theingredientlist.co), part of the ingredient list, bengaluru.
 
----
+## what's in it
 
-## What it does
+**desktop (office)** - 13 modules covering order to cash: customers, orders, quotations, invoices, dispatch, production, products, inventory, employees, attendance, payroll, cash book, dashboard.
 
-**Desktop (office)** — 13 modules covering the full order-to-cash cycle:
-Customers, Orders, Quotations, Invoices, Dispatch, Production, Products,
-Inventory, Employees, Attendance, Payroll, Cash Book, Dashboard.
+stuff built for this industry instead of bent out of a generic ERP:
 
-Domain-specific pieces built for this industry rather than adapted from a
-generic ERP:
+- quotation calculator with GSM × BF bursting strength logic for 3/5/7 ply
+- FEFCO box style codes on the products master
+- reel stock tracking with supplier credit terms
+- proforma + GST invoices, CGST/SGST/IGST split driven by the customer's state code
+- delivery challans with PDFs
 
-- Quotation calculator using GSM × BF bursting-strength logic for 3/5/7-ply board
-- FEFCO box style codes on the Products master
-- Reel stock tracking with supplier credit terms
-- Proforma and GST tax invoices with CGST/SGST/IGST split driven by customer state code
-- Delivery challans with PDF generation
+**mobile (shop floor)** - a PWA at `/m`, installable to the home screen, three role views:
 
-**Mobile (shop floor)** — a PWA at `/m`, installable to the home screen, with
-three role-scoped views:
-
-| Role | Screen | Can do |
+| role | screen | can do |
 |---|---|---|
-| Owner | `/m/owner` | Read-only KPIs, live machine status, alerts |
-| Supervisor | `/m/supervisor` | Update job card status and produced quantity |
-| Driver | `/m/driver` | Trip list, status updates, POD photo capture |
+| owner | `/m/owner` | read-only KPIs, live machine status, alerts |
+| supervisor | `/m/supervisor` | update job card status + produced qty |
+| driver | `/m/driver` | trip list, status updates, POD photo |
 
-Full English / ಕನ್ನಡ toggle on every mobile screen.
+english / ಕನ್ನಡ toggle on every mobile screen.
 
----
+## stack
 
-## Stack
+react 18 + ts, vite 5, react router 6, supabase (postgres + auth + storage), tanstack query 5, lucide icons, jspdf + autotable, vercel.
 
-| Layer | Choice |
-|---|---|
-| Framework | React 18 + TypeScript |
-| Build | Vite 5 |
-| Routing | React Router 6 |
-| Data | Supabase (Postgres + Auth + Storage) |
-| Server state | TanStack Query 5 |
-| Icons | lucide-react |
-| PDF | jsPDF + jspdf-autotable |
-| Hosting | Vercel |
-
----
-
-## Local setup
+## run it
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in the two Supabase values
+cp .env.example .env.local   # the two supabase values
 npm run dev
 ```
 
-`npm run build` runs `tsc -b && vite build` — the same command Vercel runs. If it
-passes locally it will deploy.
+`npm run build` = `tsc -b && vite build`, same as vercel. passes locally → it'll deploy.
 
-### Environment variables
-
-Set these in Vercel → Settings → Environment Variables, and in `.env.local` for
-local work:
+env (vercel → settings → env vars, and `.env.local`):
 
 ```
 VITE_SUPABASE_URL=https://<project>.supabase.co
 VITE_SUPABASE_ANON_KEY=<anon key>
 ```
 
-Without them the app renders a configuration notice instead of crashing.
+without them the app shows a config notice instead of crashing.
 
----
-
-## Project structure
+## layout
 
 ```
-threxa-erp/
-├── index.html              PWA meta tags, manifest link, SW registration
-├── vercel.json             SPA rewrite — all paths serve index.html
-├── public/
-│   ├── manifest.json       PWA manifest
-│   ├── sw.js               Service worker (app shell cache)
-│   └── icon-*.png          Home screen icons incl. maskable
-└── src/
-    ├── App.tsx             Auth gate, role detection, all routing
-    ├── main.tsx            Providers: Router, Query, Lang
-    ├── i18n/               English / Kannada dictionary + context
-    ├── mobile/             Phone views
-    │   ├── MobileShell.tsx Shared chrome, tokens, buttons, cards
-    │   ├── Owner.tsx
-    │   ├── Supervisor.tsx
-    │   └── Driver.tsx
-    ├── pages/              13 desktop module pages
-    ├── components/         Layout, sidebar, intro animation, charts
-    ├── ui/system.tsx       Desktop design system — do not hand-roll layout
-    ├── lib/                Supabase client, query client
-    ├── utils/pdf.ts        Challan and invoice PDF generation
-    └── types/
+index.html              PWA meta, manifest link, SW registration
+vercel.json             SPA rewrite, every path serves index.html
+public/manifest.json    PWA manifest
+public/sw.js            service worker (app shell cache)
+public/icon-*.png       home screen icons incl. maskable
+src/App.tsx             auth gate, role detection, routing
+src/main.tsx            providers: router, query, lang
+src/i18n/               english / kannada dictionary + context
+src/mobile/             phone views (MobileShell, Owner, Supervisor, Driver)
+src/pages/              the 13 desktop modules
+src/components/         layout, sidebar, intro animation, charts
+src/ui/system.tsx       desktop design system
+src/lib/                supabase client, query client
+src/utils/pdf.ts        challan + invoice PDFs
+src/types/
 ```
 
-**Rule:** desktop pages compose primitives from `src/ui/system.tsx`. Mobile views
-compose from `src/mobile/MobileShell.tsx`. Neither should hand-roll layout — that
-is what keeps 13 modules looking like one product.
+**rule:** desktop pages are built from `src/ui/system.tsx`, mobile from `src/mobile/MobileShell.tsx`. don't hand-roll layout in either, that's what keeps 13 modules looking like one product.
 
----
+## roles
 
-## Roles
-
-Roles come from Supabase user metadata. Supabase Dashboard → Authentication →
-Users → select a user → **User Metadata**:
+from supabase user metadata. supabase → authentication → users → pick a user → **user metadata**:
 
 ```json
 { "role": "owner" }
 ```
 
-| Value | Access |
+| value | access |
 |---|---|
-| `admin` | Full desktop ERP. Default when metadata is absent. |
-| `owner` | Desktop ERP; auto-redirects to `/m/owner` on screens under 820px. |
-| `supervisor` | `/m/supervisor` only. Cannot reach the desktop ERP. |
-| `driver` | `/m/driver` only. Cannot reach the desktop ERP. |
+| `admin` | full desktop ERP, default if metadata's missing |
+| `owner` | desktop ERP, auto-redirects to `/m/owner` under 820px |
+| `supervisor` | `/m/supervisor` only |
+| `driver` | `/m/driver` only |
 
-Route-level restriction is client-side and is a UX boundary, not a security one.
-Enforce actual access with Supabase Row Level Security policies keyed on the same
-metadata claim before any client goes live.
+the route restriction is client-side, so it's a UX boundary not security. lock real access with supabase RLS on the same claim before any client goes live.
 
----
+## on a phone
 
-## Installing on a phone
+open the deployed url → android: chrome menu → add to home screen. iOS: share → add to home screen. launches fullscreen.
 
-1. Open the deployed URL on the device
-2. Android: Chrome menu → Add to Home screen. iOS: Share → Add to Home Screen
-3. Launches full-screen with no browser chrome
+the service worker caches the shell so the UI loads on bad factory wifi. data still needs network, supabase calls are never cached.
 
-The service worker caches the app shell, so the interface loads on a weak factory
-connection. Data still requires network — Supabase calls are never cached.
+## where it's at
 
----
+mobile views + desktop modules run on seed data defined in each file. supabase write points are marked `/* TODO: supabase... */`. data shapes are final so wiring them doesn't change any layout.
 
-## Current state
+not built yet:
 
-The mobile views and desktop modules run on seed data defined in each file.
-Supabase write points are marked with `/* TODO: supabase... */` comments; the data
-shapes are final, so wiring them up does not change any layout.
+- storage bucket for POD photos (in memory as data URLs right now)
+- geo-fenced attendance
+- two-way tally sync
+- e-way bills from dispatch
+- multi-tenant row isolation
 
-Not yet built:
+## deploys
 
-- Supabase Storage bucket for POD photos (currently held in memory as data URLs)
-- Geo-fenced worker attendance
-- Two-way Tally sync
-- E-way bill generation from dispatch records
-- Multi-tenant row isolation
+vercel builds every push to `main`. `vercel.json` rewrites everything to `index.html` so deep links like `/m/owner/alerts` survive a refresh.
 
----
+touch anything in `public/`? bump `CACHE` in `public/sw.js` or returning devices keep serving the old shell.
 
-## Deployment
-
-Vercel builds on every push to `main`. `vercel.json` rewrites all paths to
-`index.html` so deep links like `/m/owner/alerts` survive a page refresh.
-
-When changing anything in `public/`, bump the `CACHE` constant in `public/sw.js`
-or returning devices will serve the old shell from cache.
-
----
-
-## Licence
-
-See `LICENSE`.
+licence: see `LICENSE`.
