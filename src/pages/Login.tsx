@@ -200,7 +200,7 @@ export default function Login() {
       </div>
 
       <p className={`lg-credit${ia ? " lg-credit-hidden" : ""}`}>
-        Threxa ERP · Smart Packaging Solutions
+        Threxa ERP · demo workspace
       </p>
 
       {/* ══════════════ CINEMATIC OVERLAY ═════════════════════════

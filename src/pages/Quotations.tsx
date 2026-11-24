@@ -63,7 +63,7 @@ export default function Quotations() {
   const pdf = (r: Quote) => {
     const data = generateInvoicePDF({
       invoice_no: r.no, invoice_date: r.date, due_date: r.validity,
-      company_name: "Smart Packaging Solutions", company_gstin: "29AABCS1234A1Z5",
+      company_name: "Demo Corrugators Pvt Ltd", company_gstin: "29AABCS1234A1Z5",
       customer_name: r.customer, customer_gstin: "\u2014", customer_address: "\u2014", customer_state: "Karnataka",
       items: [{ description: r.items, hsn: "4819", qty: 1, rate: r.amount, amount: r.amount }],
       subtotal: r.amount, gst_rate: 18, cgst: r.amount * 0.09, sgst: r.amount * 0.09, total: r.amount * 1.18,

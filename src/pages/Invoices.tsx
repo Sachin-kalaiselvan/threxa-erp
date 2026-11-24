@@ -60,7 +60,7 @@ export default function Invoices() {
   const dl = (r: Invoice) => {
     const pdf = generateInvoicePDF({
       invoice_no: r.no, invoice_date: r.date, due_date: r.due,
-      company_name: "Smart Packaging Solutions", company_gstin: "29AABCS1234A1Z5",
+      company_name: "Demo Corrugators Pvt Ltd", company_gstin: "29AABCS1234A1Z5",
       customer_name: r.customer, customer_gstin: r.gst, customer_address: "—", customer_state: "Karnataka",
       items: [{ description: "Corrugated Boxes", hsn: "4819", qty: 100, rate: r.amount / 100, amount: r.amount }],
       subtotal: r.amount, gst_rate: 18, cgst: r.amount * 0.09, sgst: r.amount * 0.09, total: r.amount * 1.18, doc_type: "tax_invoice",
