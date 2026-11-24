@@ -71,12 +71,12 @@ export function ERPShell({
     // eslint-disable-next-line react-hooks/rules-of-hooks
     location = useLocation();
   } catch {
-    // running outside router context — fallback to activePath prop
+    // running outside router context - fallback to activePath prop
   }
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: T.page, fontFamily: "Inter, -apple-system, sans-serif" }}>
-      {/* ===== SIDEBAR ===== */}
+      {/* sidebar */}
       <aside
         style={{
           width: "208px",
@@ -179,13 +179,13 @@ export function ERPShell({
         </div>
       </aside>
 
-      {/* ===== MAIN ===== */}
+      {/* main */}
       <main style={{ flex: 1, overflowY: "auto" }}>{children}</main>
     </div>
   );
 }
 
-/* ---- Shared topbar used inside every dashboard page ---- */
+/* shared topbar used inside every dashboard page */
 export function DashboardTopbar({ title }: { title: string }) {
   return (
     <div

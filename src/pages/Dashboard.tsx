@@ -21,7 +21,7 @@ export default function Dashboard() {
   const nav = useNavigate();
   const { t, lang } = useLang();
 
-  /* ── header interaction state ── */
+  /* header interaction state */
   const [bellOpen, setBellOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [readIds, setReadIds] = useState<number[]>([]);
@@ -38,7 +38,7 @@ export default function Dashboard() {
   const shift = h < 14 ? t("morningShift") : h < 22 ? t("eveningShift") : t("nightShift");
   const today = new Date().toLocaleDateString(`${lang}-IN`, { weekday: "long", day: "2-digit", month: "short", year: "numeric" });
 
-  /* ── data (wire to Supabase later; shapes are final) ── */
+  /* data (wire to supabase later; shapes are final) */
   const timeline = [
     ["08:00", "Corrugation Line 1 started", "done"],
     ["09:20", "WO-1255 completed — 5,500 Sq.Ft.", "done"],
@@ -115,7 +115,7 @@ export default function Dashboard() {
     ["Purchase Order", Package,      "/inventory"],
   ] as const;
 
-  /* ── shared row style ── */
+  /* shared row style */
   const row: React.CSSProperties = { display: "flex", alignItems: "center", gap: 10, padding: "9px 16px", borderBottom: `1px solid ${T.lineSoft}` };
 
   return (
@@ -140,7 +140,7 @@ export default function Dashboard() {
                 style={{ height: 34, width: 210, background: T.card, border: `1px solid ${T.line}`, borderRadius: 8, padding: "0 44px 0 30px", fontSize: 12.5, color: T.text, outline: "none", boxSizing: "border-box" }} />
               <kbd style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: T.muted, background: T.card2, border: `1px solid ${T.line}`, borderRadius: 4, padding: "1px 5px" }}>Ctrl K</kbd>
             </div>
-            {/* ── notifications ── */}
+            {/* notifications */}
             <div style={{ position: "relative" }}>
               <button
                 onClick={() => { setBellOpen(o => !o); setUserOpen(false); }}
@@ -190,7 +190,7 @@ export default function Dashboard() {
               </Menu>
             </div>
 
-            {/* ── account ── */}
+            {/* account */}
             <div style={{ position: "relative" }}>
               <button
                 onClick={() => { setUserOpen(o => !o); setBellOpen(false); }}

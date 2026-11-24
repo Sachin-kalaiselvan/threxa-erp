@@ -1,11 +1,9 @@
--- ============================================================
--- THREXA ERP — Complete Schema (carton box manufacturer)
+-- THREXA ERP - Complete Schema (carton box manufacturer)
 -- Modules: Documents · Orders/Production/Inventory · Payroll ·
 --          Dispatch · Dashboard (role-based access)
 -- Paste this whole file into Supabase > SQL Editor > Run
--- ============================================================
 
--- ---------- ENUMS ----------
+-- enums
 create type user_role as enum ('owner', 'admin', 'production', 'dispatch', 'accounts', 'staff');
 
 create type order_status as enum (
@@ -28,7 +26,7 @@ create type attendance_status as enum ('present', 'absent', 'half_day');
 
 create type cash_entry_kind as enum ('receipt', 'payment');
 
--- ---------- PROFILES ----------
+-- profiles
 create table profiles (
   id uuid primary key references auth.users on delete cascade,
   full_name text not null default '',
@@ -49,7 +47,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function handle_new_user();
 
--- ---------- MASTERS ----------
+-- masters
 create table customers (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -87,7 +85,7 @@ create table box_specs (
   created_at timestamptz not null default now()
 );
 
--- ---------- MODULE 1: DOCUMENTS ----------
+-- module 1: documents
 -- Quotations from the GSM x BF calculator
 create table quotations (
   id uuid primary key default gen_random_uuid(),
@@ -115,7 +113,7 @@ create table quotations (
   created_at timestamptz not null default now()
 );
 
--- ---------- MODULE 2: ORDERS / PRODUCTION / INVENTORY ----------
+-- module 2: orders / production / inventory
 create table orders (
   id uuid primary key default gen_random_uuid(),
   order_no text unique not null,
@@ -196,7 +194,7 @@ create table reels (
   created_at timestamptz not null default now()
 );
 
--- Cash book — daily receipts, payments, running balance (computed in app)
+-- Cash book - daily receipts, payments, running balance (computed in app)
 create table cash_entries (
   id uuid primary key default gen_random_uuid(),
   entry_date date not null default current_date,
@@ -210,7 +208,7 @@ create table cash_entries (
   created_at timestamptz not null default now()
 );
 
--- ---------- MODULE 3: PAYROLL & ATTENDANCE ----------
+-- module 3: payroll & attendance
 create table employees (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -231,7 +229,7 @@ create table attendance (
   unique (employee_id, att_date)
 );
 
--- ---------- MODULE 4: DISPATCH ----------
+-- module 4: dispatch
 create table dispatches (
   id uuid primary key default gen_random_uuid(),
   challan_no text unique not null,
@@ -246,7 +244,7 @@ create table dispatches (
   created_at timestamptz not null default now()
 );
 
--- ---------- BILLING (proforma + GST tax invoice, CGST/SGST split) ----------
+-- billing (proforma + gst tax invoice, cgst/sgst split)
 create table invoices (
   id uuid primary key default gen_random_uuid(),
   invoice_no text unique not null,
@@ -276,7 +274,7 @@ create table payments (
   created_at timestamptz not null default now()
 );
 
--- ---------- DOCUMENT NUMBERING ----------
+-- document numbering
 create table number_sequences (
   key text primary key,
   prefix text not null,
@@ -306,7 +304,7 @@ begin
 end;
 $$;
 
--- ---------- ACTIVITY LOG ----------
+-- activity log
 create table activity_log (
   id bigint generated always as identity primary key,
   user_id uuid references profiles(id),
@@ -317,9 +315,9 @@ create table activity_log (
   created_at timestamptz not null default now()
 );
 
--- ---------- RLS ----------
+-- rls
 -- Prototype: any authenticated user can read/write everything.
--- Role-based tightening (owner vs staff) happens in the hardening phase —
+-- Role-based tightening (owner vs staff) happens in the hardening phase -
 -- the UI already hides finance/payroll from non-privileged roles, but real
 -- enforcement must land here before go-live.
 do $$
@@ -338,7 +336,7 @@ begin
   end loop;
 end $$;
 
--- ---------- INDEXES ----------
+-- indexes
 create index on orders (customer_id);
 create index on orders (status);
 create index on order_items (order_id);

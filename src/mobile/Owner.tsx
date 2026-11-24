@@ -9,7 +9,7 @@ import { useLang } from "../i18n";
 import type { TKey } from "../i18n";
 import { AlertTriangle, TrendingUp, CheckCircle2 } from "lucide-react";
 
-/* ── seed data (mirrors desktop dummy data) ── */
+/* seed data (mirrors desktop dummy data) */
 const KPIS: { label: TKey; value: string; delta?: string; up?: boolean }[] = [
   { label: "revenueToday", value: fmtINR(284000), delta: "+12%", up: true },
   { label: "ordersToday", value: "14", delta: "+3", up: true },
@@ -42,7 +42,7 @@ export const OWNER_ALERTS = [
 
 const STATE_COLOR = { running: M.green, idle: M.muted, maintenance: M.amber };
 
-/* ── Overview tab ── */
+/* overview tab */
 export default function OwnerHome() {
   const { t } = useLang();
   const today = new Date().toLocaleDateString("en-IN", {
@@ -162,7 +162,7 @@ export default function OwnerHome() {
   );
 }
 
-/* ── Alerts tab ── */
+/* alerts tab */
 export function OwnerAlerts() {
   const { t } = useLang();
 

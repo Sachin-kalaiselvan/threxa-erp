@@ -3,11 +3,11 @@ import threxaIcon from "../assets/threxa-icon.png";
 import threxaWordmark from "../assets/threxa-wordmark.png";
 
 /**
- * ThrexaIntro — ONE CONTINUOUS SHOT
+ * ThrexaIntro - ONE CONTINUOUS SHOT
  * ---------------------------------
  * The camera never cuts. Nothing is staged as separate frames.
  * The logo DOES NOT EXIST in the scene until it is born from the
- * energy sphere. Uses the official logo assets exactly — every
+ * energy sphere. Uses the official logo assets exactly - every
  * animation is opacity / transform / filter / clip-path applied to
  * the image, never a redraw.
  *
@@ -17,18 +17,18 @@ import threxaWordmark from "../assets/threxa-wordmark.png";
  *  1.2-3.2   sunrise begins at the FAR LEFT edge of the planet and
  *            travels along the curved horizon toward center, leaving
  *            a faint purple-blue energy trail on the limb behind it
- *  3.2-3.7   ARRIVAL — everything freezes, 500ms hold
+ *  3.2-3.7   ARRIVAL - everything freezes, 500ms hold
  *  3.7-3.85  the entire horizon glows for a fraction of a second
  *  3.85-4.25 all light collapses inward into one energy sphere
  *            floating above the horizon
  *  4.25-4.55 the sphere pulses once, softly
- *  4.55-5.3  THE BIRTH — the sphere dissolves outward as the official
+ *  4.55-5.3  THE BIRTH - the sphere dissolves outward as the official
  *            logo condenses out of the light (blur 14->0, scale 1.5->1)
  *  5.25-5.65 the two stars glint last (additive light over the
  *            asset's real stars)
- *  5.65-6.4  hold — appreciate the logo, soft glow
+ *  5.65-6.4  hold - appreciate the logo, soft glow
  *  6.4-7.1   THREXA is projected from the RIGHT side of the logo
- *            (clip-path reveal + leading light streak — holographic)
+ *            (clip-path reveal + leading light streak - holographic)
  *  7.1-7.9   hold
  *  7.9-8.7   the logo travels to the top-left corner; energy trails
  *            sweep out and become the navbar + sidebar edges; the
@@ -36,7 +36,7 @@ import threxaWordmark from "../assets/threxa-wordmark.png";
  *  8.7+      your dashboard (children) finishes constructing
  *
  * The Earth persists for the whole shot. There is no checklist and
- * no progress bar — the flow is light -> energy -> identity -> OS.
+ * no progress bar - the flow is light -> energy -> identity -> OS.
  *
  * Usage:
  *   <ThrexaIntro logoTarget={{ top: 24, left: 32 }}>
@@ -63,7 +63,7 @@ interface LogoTarget {
 interface ThrexaIntroProps {
   children: React.ReactNode;
   logoTarget?: LogoTarget;
-  /** When true (e.g. the user just signed in), the intro ALWAYS plays —
+  /** When true (e.g. the user just signed in), the intro ALWAYS plays -
    *  overriding the once-per-session flag and prefers-reduced-motion. */
   forcePlay?: boolean;
 }
@@ -83,7 +83,7 @@ export default function ThrexaIntro({
     setMounted(true);
   }, []);
 
-  // Trigger logic — reruns when forcePlay flips (i.e. a fresh sign-in),
+  // Trigger logic - reruns when forcePlay flips (i.e. a fresh sign-in),
   // so a login that happens after mount still fires the intro.
   useEffect(() => {
     if (startedRef.current) return; // never restart mid-play
@@ -108,7 +108,7 @@ export default function ThrexaIntro({
 
     const removeTimer = setTimeout(() => {
       setShowIntro(false);
-      // mark played only AFTER it actually completed — an interrupted
+      // mark played only AFTER it actually completed - an interrupted
       // play no longer burns the once-per-session flag
       sessionStorage.setItem(STORAGE_KEY, "1");
     }, T_REMOVE * 1000);
@@ -131,7 +131,7 @@ export default function ThrexaIntro({
       wrap.appendChild(s);
     }
 
-    // city lights — clustered on the continents like real night-side Earth.
+    // city lights - clustered on the continents like real night-side Earth.
     // cluster x centers (vw offsets from screen center) sit inside the
     // continent shapes above. drop(x) = 130 - sqrt(130^2 - x^2) [vw]
     if (cityLightsRef.current) {
@@ -222,7 +222,7 @@ export default function ThrexaIntro({
           <div className="tx-trace-h" style={{ top: `${logoTarget.top + 36}px` }} />
           <div className="tx-trace-v" style={{ left: `${logoTarget.left + 188}px` }} />
 
-          {/* official logo — invisible until born from the sphere */}
+          {/* official logo - invisible until born from the sphere */}
           <div
             className="tx-logo-icon"
             style={
@@ -263,7 +263,7 @@ export default function ThrexaIntro({
         @keyframes txFadeIn{ to{ opacity:1; } }
         @keyframes txTwinkle{ 0%,100%{opacity:.12;} 50%{opacity:.75;} }
 
-        /* Earth — persistent, bottom ~22%. Sized in vw so limb curvature is
+        /* Earth - persistent, bottom ~22%. Sized in vw so limb curvature is
            identical on every screen (radius = 130vw, matching the sunrise math).
            Reads as Earth: deep blue night side, BLUE atmospheric rim,
            faint continent mottling, sparse warm city lights. */
@@ -281,7 +281,7 @@ export default function ThrexaIntro({
           opacity:0; animation: txFadeIn .6s ease .6s forwards;
           overflow:hidden;
         }
-        /* continents — soft landmass silhouettes below the limb.
+        /* continents - soft landmass silhouettes below the limb.
            wrapper spans the visible viewport (earth-local 80vw..180vw). */
         .tx-continents{
           position:absolute; left:80vw; top:0; width:100vw; height:16vw;
@@ -310,7 +310,7 @@ export default function ThrexaIntro({
         }
         @keyframes txTrailFade{ to{ opacity:0; } }
 
-        /* the travelling sunrise — layered cinematic composite.
+        /* the travelling sunrise - layered cinematic composite.
            One wrapper carries the travel/collapse keyframes; four light
            layers ride inside: sharp core, warm halo, wide atmospheric
            bloom, thin anamorphic streak hugging the horizon. Sharp core
@@ -371,7 +371,7 @@ export default function ThrexaIntro({
         }
         @keyframes txFlash{ 0%{opacity:0;} 40%{opacity:1;} 100%{opacity:0;} }
 
-        /* the energy sphere — pulses once, then dissolves as the logo is born */
+        /* the energy sphere - pulses once, then dissolves as the logo is born */
         .tx-energy-sphere{
           position:absolute; left:50%; top:45vh; width:56px; height:56px; margin-left:-28px; margin-top:-28px;
           border-radius:50%;
@@ -392,7 +392,7 @@ export default function ThrexaIntro({
           100%{ transform:scale(5.2); opacity:0; filter:blur(14px); }
         }
 
-        /* THE OFFICIAL LOGO — nonexistent until 4.55s, then condenses from light */
+        /* THE OFFICIAL LOGO - nonexistent until 4.55s, then condenses from light */
         .tx-logo-icon{
           position:fixed; left:50%; top:45vh; width:150px; height:150px; z-index:20;
           margin-left:-75px; margin-top:-75px;
@@ -428,7 +428,7 @@ export default function ThrexaIntro({
         @keyframes txGlintPop{ 0%{ opacity:0; transform:scale(0);} 100%{ opacity:1; transform:scale(1);} }
         @keyframes txGlintTwinkle{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
 
-        /* THREXA — holographically projected from the logo's right side */
+        /* THREXA - holographically projected from the logo's right side */
         .tx-wordmark{
           position:fixed; left:50%; top:45vh; z-index:20; width:220px;
           transform: translateY(-50%) translate(92px, 0);

@@ -1,4 +1,4 @@
-/* Threxa ERP service worker — app shell cache.
+/* Threxa ERP service worker - app shell cache.
    Bump CACHE on every deploy that changes the shell. */
 const CACHE = "threxa-v1";
 const SHELL = ["/", "/manifest.json", "/icon-192.png", "/icon-512.png"];

@@ -104,7 +104,7 @@ export default function Demo() {
 
   return (
     <div style={{ position: "relative", minHeight: "calc(100vh - 64px)" }}>
-      {/* ── page ─────────────────────────────────────────── */}
+      {/* page */}
       <div style={{ ...fadeIn(t >= CUE.page), padding: "4px 0 40px" }}>
         <div style={{ marginBottom: 22 }}>
           <h1 style={{ fontSize: 22, fontWeight: 600, color: T.text, margin: 0 }}>Production</h1>
@@ -312,7 +312,7 @@ export default function Demo() {
         </div>
       </div>
 
-      {/* ── opening question ─────────────────────────────── */}
+      {/* opening question */}
       <div
         style={{
           position: "fixed",
@@ -336,7 +336,7 @@ export default function Demo() {
         </div>
       </div>
 
-      {/* ── closing card ─────────────────────────────────── */}
+      {/* closing card */}
       <div
         style={{
           position: "fixed",

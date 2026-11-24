@@ -63,7 +63,7 @@ export function MobileShell({
           "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Kannada', sans-serif",
       }}
     >
-      {/* ── header ── */}
+      {/* header */}
       <header
         style={{
           position: "sticky",
@@ -149,7 +149,7 @@ export function MobileShell({
         </div>
       </header>
 
-      {/* ── content ── */}
+      {/* content */}
       <main
         style={{
           flex: 1,
@@ -162,7 +162,7 @@ export function MobileShell({
         {children}
       </main>
 
-      {/* ── bottom nav ── */}
+      {/* bottom nav */}
       {nav.length > 1 && (
         <nav
           style={{
@@ -210,7 +210,7 @@ export function MobileShell({
   );
 }
 
-/* ── shared bits ── */
+/* shared bits */
 
 export function MCard({
   children,

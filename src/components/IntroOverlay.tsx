@@ -76,7 +76,7 @@ export default function IntroOverlay() {
             transform="rotate(-24 100 100)"
             fill="none" stroke="url(#tiGrad)" strokeWidth="7" strokeLinecap="round"
           />
-          {/* X builds inside — two strokes */}
+          {/* X builds inside - two strokes */}
           <line className="ti-x1" x1="64" y1="60" x2="136" y2="140"
             stroke="url(#tiGrad)" strokeWidth="20" strokeLinecap="round" />
           <line className="ti-x2" x1="136" y1="60" x2="64" y2="140"
@@ -133,7 +133,7 @@ export default function IntroOverlay() {
         }
         .ti-skip:hover{ color:#E7E8F0; }
 
-        /* ── stars: pure CSS, zero JS ── */
+        /* stars: pure css, zero js */
         .ti-stars{
           position:absolute; inset:0; opacity:0;
           background-image:
@@ -158,7 +158,7 @@ export default function IntroOverlay() {
         }
         @keyframes tiTwinkle{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
 
-        /* ── horizon glow ── */
+        /* horizon glow */
         .ti-horizon{
           position:absolute; left:-10%; right:-10%; bottom:-4vh; height:26vh;
           border-radius:50% 50% 0 0 / 100% 100% 0 0;
@@ -169,7 +169,7 @@ export default function IntroOverlay() {
           transform:translateZ(0);
         }
 
-        /* ── sun travel (frames 2-5) ── */
+        /* sun travel (frames 2-5) */
         .ti-sun{
           position:absolute; left:50%; top:50%; width:0; height:0;
           will-change:transform,opacity; transform:translateZ(0);
@@ -200,7 +200,7 @@ export default function IntroOverlay() {
           100%{ transform:scale(.05);  opacity:0; }
         }
 
-        /* ── logo forge (frames 6-10) ── */
+        /* logo forge (frames 6-10) */
         .ti-logo{
           position:relative; z-index:2; text-align:center;
           display:flex; flex-direction:column; align-items:center; gap:14px;
@@ -226,7 +226,7 @@ export default function IntroOverlay() {
           100%{ opacity:1; transform:scale(1); }
         }
 
-        /* ── wordmark (frame 11) ── */
+        /* wordmark (frame 11) */
         .ti-word{
           font-size:24px; font-weight:600; color:#EDEBFF;
           letter-spacing:.55em; padding-left:.55em;
@@ -237,7 +237,7 @@ export default function IntroOverlay() {
           to{ opacity:1; filter:blur(0); letter-spacing:.38em; }
         }
 
-        /* ── init checklist (frame 12) ── */
+        /* init checklist (frame 12) */
         .ti-init{
           position:absolute; left:50%; bottom:9vh; transform:translateX(-50%);
           width:min(340px, 78vw); z-index:2;

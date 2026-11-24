@@ -20,7 +20,7 @@ export const LANGUAGES: { value: Lang; label: string; english: string }[] = [
 ];
 
 const EN = {
-  /* ── shell / roles ── */
+  /* shell / roles */
   owner: "Owner",
   supervisor: "Supervisor",
   driver: "Driver",
@@ -35,7 +35,7 @@ const EN = {
   markAllRead: "Mark all read",
   saveChanges: "Save changes",
 
-  /* ── desktop sidebar ── */
+  /* desktop sidebar */
   navDashboard: "Dashboard",
   navCustomers: "Customers",
   navOrders: "Orders",
@@ -56,7 +56,7 @@ const EN = {
   navVendors: "Vendors",
   navActivity: "Activity Log",
 
-  /* ── desktop dashboard ── */
+  /* desktop dashboard */
   goodMorning: "Good Morning",
   goodAfternoon: "Good Afternoon",
   goodEvening: "Good Evening",
@@ -72,7 +72,7 @@ const EN = {
   cashPosition: "Cash Position",
   recentActivity: "Recent Activity",
 
-  /* ── settings modal ── */
+  /* settings modal */
   settingsSubtitle: "Language and notification preferences",
   languageHelp: "Applies to the shop-floor app and operator screens",
   operationalAlerts: "Operational alerts",
@@ -82,7 +82,7 @@ const EN = {
   dailyDigest: "Daily email digest",
   dailyDigestSub: "Production summary at 8:00 PM",
 
-  /* ── mobile: owner ── */
+  /* mobile: owner */
   overview: "Overview",
   alerts: "Alerts",
   revenueToday: "Revenue today",
@@ -98,7 +98,7 @@ const EN = {
   idle: "Idle",
   maintenance: "Maintenance",
 
-  /* ── mobile: supervisor ── */
+  /* mobile: supervisor */
   jobCards: "Job cards",
   start: "Start",
   pause: "Pause",
@@ -110,7 +110,7 @@ const EN = {
   update: "Update",
   saved: "Saved",
 
-  /* ── mobile: driver ── */
+  /* mobile: driver */
   trips: "Trips",
   markInTransit: "Start trip",
   markDelivered: "Mark delivered",
@@ -122,7 +122,7 @@ const EN = {
   takePhoto: "Take photo",
   photoAttached: "Photo attached",
 
-  /* ── statuses ── */
+  /* statuses */
   Pending: "Pending",
   "In Transit": "In transit",
   Dispatched: "Dispatched",
@@ -170,7 +170,7 @@ const KN: Record<TKey, string> = {
   navVendors: "ಪೂರೈಕೆದಾರರು",
   navActivity: "ಚಟುವಟಿಕೆ ದಾಖಲೆ",
 
-  /* ── desktop dashboard ── */
+  /* desktop dashboard */
 
   goodMorning: "ಶುಭೋದಯ",
   goodAfternoon: "ಶುಭ ಮಧ್ಯಾಹ್ನ",
@@ -278,7 +278,7 @@ const HI: Record<TKey, string> = {
   navVendors: "विक्रेता",
   navActivity: "गतिविधि लॉग",
 
-  /* ── desktop dashboard ── */
+  /* desktop dashboard */
 
   goodMorning: "सुप्रभात",
   goodAfternoon: "नमस्कार",
@@ -386,7 +386,7 @@ const TA: Record<TKey, string> = {
   navVendors: "விற்பனையாளர்கள்",
   navActivity: "செயல்பாட்டு பதிவு",
 
-  /* ── desktop dashboard ── */
+  /* desktop dashboard */
 
   goodMorning: "காலை வணக்கம்",
   goodAfternoon: "மதிய வணக்கம்",
@@ -490,7 +490,7 @@ export function LangProvider({ children }: { children: React.ReactNode }) {
     try {
       window.localStorage.setItem(STORE_KEY, lang);
     } catch {
-      /* private mode — ignore */
+      /* private mode - ignore */
     }
     document.documentElement.lang = lang;
   }, [lang]);

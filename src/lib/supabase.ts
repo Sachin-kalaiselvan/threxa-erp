@@ -13,7 +13,7 @@ export const isSupabaseConfigured = Boolean(url && anonKey);
 
 /**
  * Always a real client. When env vars are missing we fall back to a
- * placeholder so module evaluation never crashes — but the app never
+ * placeholder so module evaluation never crashes - but the app never
  * actually calls it in that state, because App.tsx short-circuits to
  * the "not configured" screen first.
  */

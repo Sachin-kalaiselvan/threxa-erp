@@ -78,7 +78,7 @@ export default function Login() {
       const el = (now - t0) / 1000;
       ctx.clearRect(0, 0, cv.width, cv.height);
 
-      /* stars: fade in 0–0.8s, fade out 5.0–6.0s */
+      /* stars: fade in 0-0.8s, fade out 5.0-6.0s */
       const sIn  = Math.min(1, el / .8);
       const sOut = Math.max(0, 1 - Math.max(0, (el - 5.0)));
       const sOp  = sIn * sOut;
@@ -136,7 +136,7 @@ export default function Login() {
   return (
     <div className="lg-root">
 
-      {/* ── Canvas — OUTSIDE camera for real parallax depth ─────── */}
+      {/* canvas - outside camera for real parallax depth */}
       <canvas ref={canvasRef} className="lg-canvas" />
 
       {/* ── Premium app background layers ──────────────────────────
@@ -146,7 +146,7 @@ export default function Login() {
       <div className="lg-bg-grain" /> {/* SVG fractal noise at 2.5% op  */}
       <div className="lg-bg-mesh"  /> {/* barely visible 48px grid       */}
 
-      {/* ── Real brand — top-center above the form ─────────────────
+      {/* ── Real brand - top-center above the form ─────────────────
           Hidden during the cinematic. Crossfades in at 6.6s while
           the cinematic logo is AT THE EXACT SAME PIXEL POSITION.  */}
       <div className={`lg-brand${ia ? " lg-brand-hidden" : ""}`}>
@@ -154,7 +154,7 @@ export default function Login() {
         <img src={threxaWordmark} className="lg-wordmark" alt="THREXA" />
       </div>
 
-      {/* ── Login form — assembles while the logo is still docking ──
+      {/* ── Login form - assembles while the logo is still docking ──
           RULE 10: logo docks while login is 30–40% visible.
           RULE 11: login finishes exactly as logo reaches final pos. */}
       <div className={`lg-form${ia ? " lg-assembling" : ""}`}>
@@ -165,7 +165,7 @@ export default function Login() {
           <span className="lg-welcome-text">Welcome Back</span>
         </div>
 
-        {/* email field — underline draws itself, then input appears */}
+        {/* email field - underline draws itself, then input appears */}
         <div className="lg-field lg-f0">
           <div className="lg-underline" />
           <label className="lg-label" htmlFor="lg-em">Email</label>
@@ -415,7 +415,7 @@ export default function Login() {
           width:360px; max-width:calc(100vw - 48px);
         }
 
-        /* ── Welcome Back ── */
+        /* welcome back */
         .lg-welcome-wrap{
           display:flex; align-items:center; height:30px; margin-bottom:34px;
           overflow:hidden;
@@ -441,7 +441,7 @@ export default function Login() {
         }
         @keyframes lgWelcomeType{ to{width:7.2em;} }
 
-        /* ── Fields ── */
+        /* fields */
         .lg-field{ margin-bottom:28px; position:relative; }
 
         /* underline draws left→right first */
@@ -510,7 +510,7 @@ export default function Login() {
         }
         .lg-credit-hidden{ opacity:0; animation:txFadeIn .4s ease 7.0s forwards; }
 
-        /* ── ASSEMBLY ANIMATIONS (only active during intro) ─────── */
+        /* assembly animations (only active during intro) */
         /*
           Timeline (seconds from mount):
           5.38  cursor + welcome-wrap appear
@@ -603,13 +603,13 @@ export default function Login() {
           100%   {transform:translateY(0) scale(1);}
         }
 
-        /* Space scene — fades away at 6.6s */
+        /* Space scene - fades away at 6.6s */
         .tx-scene{
           position:absolute; inset:0; background:#08090E;
           animation:txFadeOut .9s ease 6.6s forwards;
         }
 
-        /* ── Earth ── */
+        /* earth */
         .tx-earth{
           position:absolute; left:50%; top:78vh; width:260vw; height:260vw;
           margin-left:-130vw; border-radius:50%; overflow:hidden;
@@ -673,7 +673,7 @@ export default function Login() {
             txSunBreathe .65s ease-in-out 3.0s 1,
             txSunCollapse .4s cubic-bezier(.6,0,.8,1) 3.4s forwards;
         }
-        /* NO mix-blend-mode on large elements — GPU killer */
+        /* NO mix-blend-mode on large elements - GPU killer */
         .tx-sun-core{
           position:absolute; left:-13px; top:-13px; width:26px; height:26px;
           border-radius:50%;
@@ -713,7 +713,7 @@ export default function Login() {
           100%{transform:translate(0,-33vh) scale(.08); opacity:1;}
         }
 
-        /* Energy sphere — appears where sunrise collapsed */
+        /* Energy sphere - appears where sunrise collapsed */
         .tx-sphere{
           position:absolute; left:50%; top:45vh;
           width:56px; height:56px; margin-left:-28px; margin-top:-28px;
@@ -751,7 +751,7 @@ export default function Login() {
              → visual center: (50vw+30px, 22vh) ← matches lg-brand word center ✓
         ═══════════════════════════════════════════════════════════ */
 
-        /* ── Icon (centered at 45vh, birth animation then dock) ── */
+        /* icon (centered at 45vh, birth animation then dock) */
         .tx-icon-outer{
           position:fixed; left:50%; top:45vh;
           width:100px; height:100px;
@@ -763,7 +763,7 @@ export default function Login() {
         .tx-icon-inner{
           width:100%; height:100%;
           opacity:0; will-change:opacity,transform;
-          /* NO filter:blur — GPU killer. Scale+opacity only. */
+          /* NO filter:blur - GPU killer. Scale+opacity only. */
           animation:
             txIconBirth .75s cubic-bezier(.4,0,.2,1) 4.1s forwards,
             txIconRim   2.2s ease-in-out 4.85s 1;
@@ -775,7 +775,7 @@ export default function Login() {
           35% {opacity:.65;}
           100%{opacity:1; transform:scale(1);}
         }
-        /* ONE soft rim pulse — this is all the "sacred" logo gets */
+        /* ONE soft rim pulse - this is all the "sacred" logo gets */
         @keyframes txIconRim{
           0%,100%{filter:drop-shadow(0 0 6px rgba(139,92,246,.3));}
           50%    {filter:drop-shadow(0 0 14px rgba(139,92,246,.65));}
@@ -785,7 +785,7 @@ export default function Login() {
         }
         @keyframes txIconFadeOut{ to{opacity:0;} }
 
-        /* ── Wordmark (below icon → beside icon after dock) ── */
+        /* wordmark (below icon → beside icon after dock) */
         .tx-word-outer{
           position:fixed; left:50%; top:calc(45vh + 78px);
           width:200px;
@@ -802,7 +802,7 @@ export default function Login() {
         }
         .tx-word-inner img{ width:100%; display:block; }
 
-        /* birth: rises up from below, fades in — stacked directly below icon */
+        /* birth: rises up from below, fades in - stacked directly below icon */
         @keyframes txWordBirth{
           0%  {opacity:0; transform:translateY(calc(-50% + 8px));}
           100%{opacity:1; transform:translateY(-50%);}

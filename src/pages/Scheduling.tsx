@@ -23,7 +23,7 @@ interface Job {
 }
 
 const CHANGEOVER_SAME_FLUTE = 12;   // minutes
-const CHANGEOVER_DIFF_FLUTE = 45;   // minutes — reel/flute change
+const CHANGEOVER_DIFF_FLUTE = 45;   // minutes - reel/flute change
 
 const SEED: Job[] = [
   { id: "1", jobNo: "JC-3301", customer: "Ramesh Traders",        machine: "Corrugation L1", flute: "B", boxSize: "18×12×10", qty: 6000, runMins: 95, due: "Today 4:00 PM" },

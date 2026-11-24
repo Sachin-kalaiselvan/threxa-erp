@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, Filter, Download, Upload, Plus, ChevronLeft, ChevronRight, Inbox, X } from "lucide-react";
 
-/* ── tokens ─────────────────────────────────────────────── */
+/* tokens */
 export const T = {
   bg:       "#0A0B14",
   sidebar:  "#0D0E1C",
@@ -31,7 +31,7 @@ export const fmtINR = (n: number) =>
   n >= 1e5 ? `₹${(n / 1e5).toFixed(2)}L` :
   `₹${n.toLocaleString("en-IN")}`;
 
-/* ── Card ───────────────────────────────────────────────── */
+/* card */
 export function Card({ children, pad = 0, style = {} }:
   { children: React.ReactNode; pad?: number; style?: React.CSSProperties }) {
   return (
@@ -50,7 +50,7 @@ export function CardTitle({ children, action }: { children: React.ReactNode; act
   );
 }
 
-/* ── Buttons ────────────────────────────────────────────── */
+/* buttons */
 export function Btn({ children, variant = "ghost", icon: Icon, onClick }:
   { children?: React.ReactNode; variant?: "primary" | "ghost"; icon?: any; onClick?: () => void }) {
   const primary = variant === "primary";
@@ -72,7 +72,7 @@ export function Btn({ children, variant = "ghost", icon: Icon, onClick }:
   );
 }
 
-/* ── Badge ──────────────────────────────────────────────── */
+/* badge */
 export function Badge({ label, color }: { label: string; color: string }) {
   return (
     <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 20, background: `${color}1c`, color, whiteSpace: "nowrap" }}>
@@ -85,7 +85,7 @@ export function Dot({ color }: { color: string }) {
   return <span style={{ width: 7, height: 7, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />;
 }
 
-/* ── Progress bar ───────────────────────────────────────── */
+/* progress bar */
 export function Progress({ value, color = T.accent, height = 5 }:
   { value: number; color?: string; height?: number }) {
   return (
@@ -95,7 +95,7 @@ export function Progress({ value, color = T.accent, height = 5 }:
   );
 }
 
-/* ── Sparkline ──────────────────────────────────────────── */
+/* sparkline */
 export function Spark({ values, color, w = 64, h = 22 }:
   { values: number[]; color: string; w?: number; h?: number }) {
   const mx = Math.max(...values), mn = Math.min(...values), r = mx - mn || 1;
@@ -107,7 +107,7 @@ export function Spark({ values, color, w = 64, h = 22 }:
   );
 }
 
-/* ── PageShell: identical skeleton for every module ─────── */
+/* pageshell: identical skeleton for every module */
 export function PageShell({ title, subtitle, meta, children }:
   { title: string; subtitle?: string; meta?: string[]; children: React.ReactNode }) {
   return (
@@ -134,7 +134,7 @@ export function PageShell({ title, subtitle, meta, children }:
   );
 }
 
-/* ── Compact KPI strip (cards ≈100px tall) ──────────────── */
+/* compact kpi strip (cards ≈100px tall) */
 export function KPIStrip({ items }: {
   items: { label: string; value: string; sub?: string; delta?: string; up?: boolean; spark?: number[]; color?: string }[];
 }) {
@@ -277,7 +277,7 @@ export function DataTable({ cols, rows, pageSize = 8 }:
   );
 }
 
-/* ── Two-line cell helper (primary + secondary info) ────── */
+/* two-line cell helper (primary + secondary info) */
 export function Cell2({ primary, secondary }: { primary: React.ReactNode; secondary?: React.ReactNode }) {
   return (
     <div>
@@ -292,7 +292,7 @@ export function Cell2({ primary, secondary }: { primary: React.ReactNode; second
    Modal · FormModal · Menu · MenuItem · Toggle · useClickOutside
    ═══════════════════════════════════════════════════════════ */
 
-/* ── useClickOutside: closes on outside mousedown or Escape ── */
+/* useclickoutside: closes on outside mousedown or escape */
 export function useClickOutside<T extends HTMLElement>(onClose: () => void) {
   const ref = useRef<T | null>(null);
   const cb = useRef(onClose);
@@ -312,7 +312,7 @@ export function useClickOutside<T extends HTMLElement>(onClose: () => void) {
   return ref;
 }
 
-/* ── Menu: anchored dropdown panel. Parent must be position:relative ── */
+/* menu: anchored dropdown panel. parent must be position:relative */
 export function Menu({ open, onClose, width = 280, align = "right", children }:
   { open: boolean; onClose: () => void; width?: number; align?: "left" | "right"; children: React.ReactNode }) {
   const ref = useClickOutside<HTMLDivElement>(onClose);
@@ -329,7 +329,7 @@ export function Menu({ open, onClose, width = 280, align = "right", children }:
   );
 }
 
-/* ── MenuItem ── */
+/* menuitem */
 export function MenuItem({ icon: Icon, label, sub, danger = false, onClick }:
   { icon?: any; label: string; sub?: string; danger?: boolean; onClick?: () => void }) {
   return (
@@ -349,7 +349,7 @@ export function MenuItem({ icon: Icon, label, sub, danger = false, onClick }:
   );
 }
 
-/* ── Toggle ── */
+/* toggle */
 export function Toggle({ on, onChange, label, sub }:
   { on: boolean; onChange: (v: boolean) => void; label: string; sub?: string }) {
   return (
@@ -371,7 +371,7 @@ export function Toggle({ on, onChange, label, sub }:
   );
 }
 
-/* ── Modal: overlay + centred card. Render conditionally. ── */
+/* modal: overlay + centred card. render conditionally. */
 export function Modal({ title, subtitle, onClose, children, footer, width = 580 }:
   { title: string; subtitle?: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode; width?: number }) {
   useEffect(() => {
@@ -419,7 +419,7 @@ export function Modal({ title, subtitle, onClose, children, footer, width = 580 
   );
 }
 
-/* ── FormModal: declarative create/edit form ── */
+/* formmodal: declarative create/edit form */
 export type FieldSpec = {
   key: string;
   label: string;
@@ -516,10 +516,10 @@ export function FormModal({ title, subtitle, fields, initial, submitLabel = "Sav
   );
 }
 
-/* ── newId: stable-enough client id for locally created rows ── */
+/* newid: stable-enough client id for locally created rows */
 export const newId = () => `n${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
-/* ── parseCSV: header row + quoted cells, used by ActionBar imports ── */
+/* parsecsv: header row + quoted cells, used by actionbar imports */
 export function parseCSV(text: string): Record<string, string>[] {
   const rows: string[][] = [];
   let cell = "", row: string[] = [], q = false;
